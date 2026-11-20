@@ -1,0 +1,242 @@
+# WORDLESS v2.0 — Cloudflare Workers configuration (Phase P1).
+# Rust backend via workers-rs / worker-build. No secrets in this file.
+# D1/R2/KV ids below are LOCAL-DEV placeholders: `wrangler dev` uses
+# local SQLite/R2/KV and never touches staging or production.
+# Staging/production ids are filled in at deploy time (P5 cutover);
+# until then, DO NOT deploy this worker anywhere.
+
+name = "wordless-v2"
+main = "crates/wordless-worker/build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (see scripts/build-worker.sh
+# for why); wrangler runs this with cwd = the wrangler.toml directory.
+command = "bash scripts/build-worker.sh"
+
+# Admin SPA (React). P1 serves a placeholder page from ./admin/dist;
+# the redesigned admin SPA lands in P4. The binding line is required:
+# without it no ASSETS fetcher is injected and /admin/* returns 503.
+[assets]
+binding = "ASSETS"
+directory = "./admin/dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wordless-v2"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "wordless-media-v2"
+
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "00000000-0000-0000-0000-000000000000"
+
+# P6 — Extension runtime dispatch.
+# The main Worker reaches extensions in order (see lib.rs
+# build_ext_resolver):
+#   1. per-instance `dev_url` — local dev, plain HTTP to a locally
+#      running extension Worker;
+#   2. a service binding `EXT_<SLUG>` — the FREE production path:
+#      the publish script deploys the extension as a normal
+#      account-level Worker and adds
+#        [[services]] binding = "EXT_<SLUG>" service = "<slug>"
+#      (per env) here, then redeploys the main Worker;
+#   3. the dispatch namespace below — the design target, but it needs
+#      Workers for Platforms ($25/mo, no free tier), so it is NOT the
+#      free-tier path. Local `wrangler dev` reports the binding as
+#      "not supported" and dispatch fetches fail there — that is
+#      expected. The namespace must exist before a staging/production
+#      deploy that loads extensions through it; create it with
+#        wrangler dispatch-namespace create wordless-extensions
+#      (run on the user's machine — never from this VM).
+# The extension host secret (WORDLESS_EXT_HOST_SECRET) is a Worker
+# secret, never in this file: `wrangler secret put
+# WORDLESS_EXT_HOST_SECRET` (or .dev.vars for local dev). Without it,
+# extension loading refuses and nothing dispatches (fail closed).
+[[dispatch_namespaces]]
+binding = "EXT_DISPATCHER"
+namespace = "wordless-extensions"
+
+# Split (2026-11-20): the converter Worker — the PHP → TypeScript
+# engine + Elementor renderer as a separate Worker with its own 3 MiB
+# budget. The main Worker reaches it through this binding in
+# production (see lib.rs build_converter); local dev uses
+# WORDLESS_CONVERTER_URL instead (plain HTTP to a locally running
+# converter Worker — see scripts/dev-split.sh). The binding must be
+# declared per environment too (like [ai] above): wrangler does NOT
+# inherit top-level bindings into [env.*].
+[[services]]
+binding = "CONVERTER"
+service = "wordless-converter"
+
+# Size remedy (2026-11-20): the social networking Worker (P7) and
+# the WooCommerce Worker (P8) — same pattern as CONVERTER above.
+# The main Worker reaches them through these bindings in
+# production (see lib.rs build_social / build_woo_client); local
+# dev uses WORDLESS_SOCIAL_URL / WORDLESS_WOO_URL instead (plain
+# HTTP to locally running Workers — see scripts/dev-split.sh).
+# Like CONVERTER, they must be declared per environment too:
+# wrangler does NOT inherit top-level bindings into [env.*].
+[[services]]
+binding = "SOCIAL"
+service = "wordless-social"
+
+[[services]]
+binding = "WOO"
+service = "wordless-woocommerce"
+
+# Size remedy (2026-11-20): the school portal + CBT Worker (P9) —
+# same pattern as SOCIAL / WOO above. Local dev uses
+# WORDLESS_SCHOOL_URL instead (plain HTTP to a locally running
+# Worker — see scripts/dev-split.sh). Declared per environment too.
+[[services]]
+binding = "SCHOOL"
+service = "wordless-school"
+
+# SEO split (2026-11-20): the SEO Engine Worker (P10) — same pattern as SCHOOL above. Local dev uses WORDLESS_SEO_URL instead (plain HTTP to a locally running Worker — see scripts/dev-split.sh). Declared per environment too.
+[[services]]
+binding = "SEO"
+service = "wordless-seo"
+
+# AI (Workers AI) binding: declared in P3 so the AI command centre
+# can call the default provider. In local dev wrangler serves a
+# local AI binding; without a Cloudflare account the provider
+# reports "not configured" honestly. The Images binding is still
+# NOT declared (P2 media derivatives stay unbound).
+[ai]
+binding = "AI"
+
+# Cron Triggers (P4 scheduling): every 5 minutes the scheduled handler
+# flips due scheduled drafts to `publish` (see `crates/wordless-cms/
+# src/scheduling.rs`). Local `wrangler dev` fires no real cron — the
+# lazy publish check on single-post reads is the verifiable half
+# locally; the sweep itself is unit-tested and fires on deploy (P5).
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Environments (P5 cutover) — staging and production are separate Workers
+# with separate D1 databases and R2 buckets, EXCEPT that production
+# CUTOVER shares the live v1 data: the production D1, R2 bucket and KV
+# namespace below must be the SAME resources the live v1 worker uses,
+# because the cutover swaps the Worker binary, not the data (see §1.3
+# of docs/04-rust-v2-architecture.md and docs/cutover-runbook.md).
+# Deploy with:
+#   npm run deploy:staging      (cargo tests + build + size gate, then deploy --env staging)
+#   npm run deploy:production   (same, then deploy --env production)
+# Promotion path: dev → staging → production. Until the ids below are
+# filled in, scripts/deploy.mjs REFUSES to deploy (placeholder check).
+# The top-level bindings stay local-dev placeholders forever.
+
+[env.staging]
+name = "wordless-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "wordless-staging"
+database_id = "REPLACE-ME"
+migrations_dir = "migrations"
+
+[[env.staging.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "wordless-media-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "CONFIG"
+id = "REPLACE-ME"
+
+# Workers AI is the default (and only required) AI provider — the
+# binding must be declared per environment: wrangler does NOT inherit
+# the top-level [ai] into [env.*] (its own warning, P5 guard test).
+[env.staging.ai]
+binding = "AI"
+
+# P6: the extension dispatch namespace, per environment (same
+# namespace name; the binding must be declared per env like [ai]).
+[[env.staging.dispatch_namespaces]]
+binding = "EXT_DISPATCHER"
+namespace = "wordless-extensions"
+
+# Split (2026-11-20): the converter Worker for this environment
+# (deployed by scripts/deploy.mjs before the main Worker).
+[[env.staging.services]]
+binding = "CONVERTER"
+service = "wordless-converter-staging"
+
+# Size remedy (2026-11-20): social + Woo Workers for this
+# environment (deployed by scripts/deploy.mjs before the main
+# Worker, after the converter).
+[[env.staging.services]]
+binding = "SOCIAL"
+service = "wordless-social-staging"
+
+[[env.staging.services]]
+binding = "WOO"
+service = "wordless-woocommerce-staging"
+
+# Size remedy (2026-11-20): school Worker for this environment.
+[[env.staging.services]]
+binding = "SCHOOL"
+service = "wordless-school-staging"
+
+# SEO split (2026-11-20): SEO Worker for this environment.
+[[env.staging.services]]
+binding = "SEO"
+service = "wordless-seo-staging"
+
+[env.production]
+name = "wordless-prod"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "wordless-prod"
+# CUTOVER: the SAME database as the live v1 worker — its id (from
+# your own `npx wrangler d1 list` output). Paste it here, replacing REPLACE-ME.
+database_id = "REPLACE-ME"
+migrations_dir = "migrations"
+
+[[env.production.r2_buckets]]
+binding = "MEDIA"
+# CUTOVER: the SAME bucket as the live v1 worker (wordless-media-prod).
+bucket_name = "wordless-media-prod"
+
+[[env.production.kv_namespaces]]
+binding = "CONFIG"
+# CUTOVER: the SAME namespace as the live v1 worker — find its id with
+# `wrangler kv namespace list` on the user's machine and paste it here.
+id = "REPLACE-ME"
+
+[env.production.ai]
+binding = "AI"
+
+# P6: the extension dispatch namespace (production).
+[[env.production.dispatch_namespaces]]
+binding = "EXT_DISPATCHER"
+namespace = "wordless-extensions"
+
+# Split (2026-11-20): the converter Worker for production.
+[[env.production.services]]
+binding = "CONVERTER"
+service = "wordless-converter-production"
+
+# Size remedy (2026-11-20): social + Woo Workers for production.
+[[env.production.services]]
+binding = "SOCIAL"
+service = "wordless-social-production"
+
+[[env.production.services]]
+binding = "WOO"
+service = "wordless-woocommerce-production"
+
+# Size remedy (2026-11-20): school Worker for production.
+[[env.production.services]]
+binding = "SCHOOL"
+service = "wordless-school-production"
+
+# SEO split (2026-11-20): SEO Worker for production.
+[[env.production.services]]
+binding = "SEO"
+service = "wordless-seo-production"

@@ -1,0 +1,62 @@
+[package]
+name = "wordless-worker"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 worker entry: the #[event(fetch)] entrypoint, Env bindings, the route table, and security headers on every response. Binary crate — owns wiring only; handlers call into wordless-kernel / wordless-db / wordless-auth."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-cms = { path = "../wordless-cms" }
+wordless-media = { path = "../wordless-media" }
+wordless-themes = { path = "../wordless-themes" }
+wordless-render = { path = "../wordless-render" }
+wordless-seo-core = { path = "../wordless-seo-core" }
+wordless-multisite = { path = "../wordless-multisite" }
+# P3 crates (AI, commerce, security, importer, backup,
+# GraphQL, outbound webhooks, integrations, Elementor).
+# NOTE (split, 2026-11-20): the conversion ENGINE (wordless-conversion)
+# and the Elementor renderer (wordless-elementor) no longer live here —
+# they run in the wordless-converter Worker. The main Worker keeps only
+# the job *records* (wordless-conversion-jobs) and reaches the engine
+# through the kernel's ConverterClient trait (see converter_client.rs).
+wordless-conversion-jobs = { path = "../wordless-conversion-jobs" }
+wordless-ai = { path = "../wordless-ai" }
+wordless-commerce = { path = "../wordless-commerce" }
+wordless-integrations = { path = "../wordless-integrations" }
+wordless-security = { path = "../wordless-security" }
+wordless-importer = { path = "../wordless-importer" }
+wordless-backup = { path = "../wordless-backup" }
+wordless-graphql = { path = "../wordless-graphql" }
+wordless-webhooks = { path = "../wordless-webhooks" }
+# P6: extension runtime (loader, host API, executor, registry).
+wordless-extensions = { path = "../wordless-extensions" }
+# NOTE (school split, 2026-11-20): the school portal + CBT
+# (wordless-school) no longer lives here — it runs in the
+# wordless-school Worker. The main Worker keeps only the 42 route
+# registrations and proxies them (see routes_proxy.rs).
+# Size remedy (2026-11-20): payment gateways live in their own crate.
+wordless-gateways = { path = "../wordless-gateways" }
+# P11: Visual Builder — palette, layout validation, extension-widget
+# registry (main Worker only; rendering stays in the converter Worker).
+wordless-builder = { path = "../wordless-builder" }
+zip = { workspace = true }
+base64 = { workspace = true }
+async-trait = "0.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+
+[lints]
+workspace = true

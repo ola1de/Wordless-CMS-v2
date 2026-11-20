@@ -1,0 +1,30 @@
+{
+  "description": "WORDLESS v2.0 \u2014 Rust backend (workers-rs) + React admin. The package.json exists only so Wrangler is a project-managed dependency and deploys run through the guarded deploy script; the worker itself is Rust, built by scripts/build-worker.sh.",
+  "devDependencies": {
+    "binaryen": "^132.0.0",
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "name": "wordless-v2",
+  "private": true,
+  "scripts": {
+    "build": "bash scripts/build-worker.sh",
+    "build:converter": "bash scripts/build-converter.sh",
+    "build:social": "bash scripts/build-social.sh",
+    "build:woo": "bash scripts/build-woo.sh",
+    "build:school": "bash scripts/build-school.sh",
+    "build:seo": "bash scripts/build-seo.sh",
+    "build:all": "bash scripts/build-worker.sh && bash scripts/build-converter.sh && bash scripts/build-social.sh && bash scripts/build-woo.sh && bash scripts/build-school.sh && bash scripts/build-seo.sh",
+    "dev:split": "bash scripts/dev-split.sh",
+    "size": "node scripts/size-report.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "deploy:production": "node scripts/deploy.mjs --env production --confirm",
+    "deploy:staging": "node scripts/deploy.mjs --env staging --confirm",
+    "publish-extension": "node scripts/publish-extensions.mjs",
+    "test": "cargo test --workspace --lib",
+    "seed-admin": "node scripts/seed-admin.mjs"
+  },
+  "version": "2.0.0-dev"
+}
