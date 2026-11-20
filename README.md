@@ -8,6 +8,32 @@ written approval). Nothing here touches the TS repo
 
 Plan: `~/workspace/wordless/docs/04-rust-v2-architecture.md` (§1, §2, §3 P1–P2).
 Converter prototype (P0): `~/workspace/wordless/rust-prototype/`.
+Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (local dev, staging, cutover). Full cutover checklist: [`docs/cutover-runbook.md`](docs/cutover-runbook.md).
+
+## Screenshots
+
+Renders of the v2 design targets, taken from the interactive UI
+preview — **not photographs of the live admin**. The live site still
+runs v1.1.0; these screens show what each phase is building towards,
+and the real admin screenshots from the staging walkthrough will
+replace them after cutover.
+
+| | |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Post Editor](docs/screenshots/editor.png) |
+| *Dashboard — the whole site at a glance* | *Post Editor — categories, tags, featured image* |
+| ![Visual Builder](docs/screenshots/builder.png) | ![Plugins](docs/screenshots/plugins.png) |
+| *Visual Builder — the full palette* | *Plugins — compatibility verdicts* |
+| ![Community](docs/screenshots/community.png) | ![Commerce](docs/screenshots/shop.png) |
+| *Community — members, groups, activity* | *Commerce — WooCommerce-style store* |
+| ![School & CBT](docs/screenshots/school.png) | ![SEO Centre](docs/screenshots/seo.png) |
+| *School & CBT — timed exams, certificates* | *SEO Centre — JSON-LD, sitemaps, audits* |
+| ![Users](docs/screenshots/users.png) | ![Elements](docs/screenshots/elements.png) |
+| *Users — fully editable profiles* | *Elements — the shared component library* |
+| ![Dashboard themes](docs/screenshots/themes.png) | ![Login customiser](docs/screenshots/login.png) |
+| *Dashboard themes — per-user choice* | *Login page — tweakable from settings* |
+| ![Public site](docs/screenshots/site.png) | |
+| *Public site theme* | |
 
 ## Current state (2026-11-20 — after P12: Multisite, the final build phase)
 
