@@ -478,6 +478,8 @@ async function main() {
       // expected-status check (both match each other but miss the expectation).
       // v2-only steps are validated inside compareStep (P12 fix); skip here
       // so a v2-only step is never double-reported.
+      const expected = step.expect === undefined ? [] : (Array.isArray(step.expect) ? step.expect : [step.expect]);
+      const expectedLabel = expected.join(' or ');
       if (!step.v2only && r1.status === r2.status && step.expect !== undefined && !expected.includes(r1.status)) {
         outcome = 'unexpected';
         issues.push({ kind: 'expect', v1: r1.status, v2: r2.status, why: `both returned ${r1.status}, expected ${expectedLabel}` });
