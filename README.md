@@ -1,10 +1,10 @@
 # WORDLESS v2.0 — Rust backend (Phases P1–P12 + size remedy: skeleton + Core CMS + Conversion/AI/Commerce + admin redesign + parity + extension runtime + social networking + converter split + WooCommerce + social/Woo split + school portal/CBT + school split + SEO depth + Visual Builder + Multisite)
 
-Local-only workspace. **Do not deploy.** The v1.1.0 TypeScript worker stays
-live until v2 reaches parity (P5 cutover). Nothing here touches the TS repo
-(`~/workspace/wordless/wordless-cms/`, read-only reference), GitHub, or the
-live site. The v2 repo shape is still open (doc §8 Q1), so this directory
-is not a git repo yet.
+Repo: [ola1de/Wordless-CMS-v2](https://github.com/ola1de/Wordless-CMS-v2).
+**Do not deploy to production yet.** The v1.1.0 TypeScript worker stays
+live until v2 passes the cutover gate (staging deploy + user walkthrough +
+written approval). Nothing here touches the TS repo
+(`~/workspace/wordless/wordless-cms/`, read-only reference) or the live site.
 
 Plan: `~/workspace/wordless/docs/04-rust-v2-architecture.md` (§1, §2, §3 P1–P2).
 Converter prototype (P0): `~/workspace/wordless/rust-prototype/`.
