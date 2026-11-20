@@ -31,7 +31,8 @@ Worker binary, not the data).
 
 - **Node.js 20+** and npm. Wrangler is a project dependency
   (`npm install`); never assume a global install.
-- **Rust toolchain** (stable) + `wasm-pack`, for the WASM builds.
+- **Rust toolchain** (stable) + `wasm-pack` + `worker-build 0.9.0`
+  (`cargo install worker-build --version 0.9.0`), for the WASM builds.
   The project pins its versions in the docs; `npm run build` fails
   loudly if the toolchain is missing.
 - **A Cloudflare account**, logged in via `npx wrangler login`

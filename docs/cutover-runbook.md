@@ -75,6 +75,7 @@ your checkout is elsewhere, and keep it consistent through the steps.
   `rustup target add wasm32-unknown-unknown`.
 - **wasm-pack 0.15.1**: `cargo install wasm-pack --version 0.15.1`.
 - **wasm-bindgen CLI 0.2.130**: `cargo install wasm-bindgen-cli --version 0.2.130`.
+- **worker-build 0.9.0**: `cargo install worker-build --version 0.9.0`. Every WASM build script calls this binary; without it `wrangler dev` and `npm run build:all` fail with `worker-build: command not found`.
 - **Node 24** (already installed: 24.16.0) and **Git for Windows**
   (already installed — `bash` from Git Bash is what runs
   `scripts/build-worker.sh`; run the deploy commands from **Git Bash**,
