@@ -114,11 +114,20 @@ if [ -f "$HELLO_PHP" ]; then
   mkdir -p "$HD_TMP/hello-dolly"
   cp -f "$HELLO_PHP" "$HD_TMP/hello-dolly/hello.php"
   printf '%s' '{"slug":"hello-dolly","name":"Hello Dolly","version":"1.7.2","description":"A plugin that prints a random lyric."}' > "$HD_TMP/hello-dolly/wordless.json"
-  # `zip -r` UPDATES an existing archive instead of replacing it, so a
-  # stale flat hello.php from an older build would survive and break the
-  # installer's prefix-strip. Remove first.
+  # No `zip` CLI on Windows (Git for Windows ships neither zip nor
+  # pacman), so build the archive with Python's zipfile — the same tool
+  # the other fixtures above already use. "w" mode replaces any existing
+  # archive, so a stale flat hello.php from an older build cannot survive.
   rm -f "$FIX/hello-dolly.zip"
-  (cd "$HD_TMP" && zip -q -r "$FIX/hello-dolly.zip" hello-dolly)
+  python3 - "$HD_TMP" "$FIX/hello-dolly.zip" <<'PY'
+import os, sys, zipfile
+src, dst = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as z:
+    for root, _dirs, files in os.walk(src):
+        for name in files:
+            path = os.path.join(root, name)
+            z.write(path, os.path.relpath(path, src))
+PY
   rm -rf "$HD_TMP"
   cp -f "$HELLO_PHP" "$FIX/hello.php"
 else
