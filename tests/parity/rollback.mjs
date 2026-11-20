@@ -31,7 +31,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PARITY = path.join(ROOT, 'tests', 'parity');
-const V1SRC = path.join(process.env.HOME, 'workspace', 'wordless', 'wordless-cms');
+// Location of the v1 TypeScript repo. Override with V1SRC when it lives
+// elsewhere, e.g. V1SRC=$HOME/Wordless-CMS node tests/parity/rollback.mjs
+const V1SRC = process.env.V1SRC || path.join(process.env.HOME, 'workspace', 'wordless', 'wordless-cms');
 const WORK = path.join(PARITY, 'work-rollback');
 const V1_DIR = path.join(WORK, 'v1');
 const V2_DIR = ROOT; // v2 runs from its own repo root, like run-parity.sh

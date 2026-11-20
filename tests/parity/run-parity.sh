@@ -13,7 +13,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-V1SRC="$HOME/workspace/wordless/wordless-cms"
+# Location of the v1 TypeScript repo. Override with V1SRC when it lives
+# elsewhere, e.g. V1SRC=$HOME/Wordless-CMS ./tests/parity/run-parity.sh
+V1SRC="${V1SRC:-$HOME/workspace/wordless/wordless-cms}"
 PARITY="$ROOT/tests/parity"
 WORK="$PARITY/work"
 FIX="$PARITY/fixtures"
@@ -22,7 +24,8 @@ V1_PORT="${V1_PORT:-8801}"
 V2_PORT="${V2_PORT:-8802}"
 WRANGLER="$V1SRC/node_modules/.bin/wrangler"
 
-export TMPDIR="$HOME/.tmp-cargo"
+export TMPDIR="${TMPDIR:-$HOME/.tmp-cargo}"
+mkdir -p "$TMPDIR"
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Webhook secrets for this local run only — injected identically into both
@@ -100,7 +103,12 @@ PY
 # The marketplace installer needs the smoke-p3 shape: a folder
 # `hello-dolly/` containing `wordless.json` + `hello-dolly/hello.php`
 # (a flat hello.php at the ZIP root is rejected: no manifest).
-HELLO_PHP="$HOME/workspace/wordless/reference/wordpress-7.1.5/wp-content/plugins/hello.php"
+HELLO_PHP="${HELLO_PHP:-$HOME/workspace/wordless/reference/wordpress-7.1.5/wp-content/plugins/hello.php}"
+# Fallback: the fixture bundled in this repo, so the harness runs on a
+# machine that has never seen the reference tree.
+if [ ! -f "$HELLO_PHP" ] && [ -f "$ROOT/tests/parity/fixtures-src/hello.php" ]; then
+  HELLO_PHP="$ROOT/tests/parity/fixtures-src/hello.php"
+fi
 if [ -f "$HELLO_PHP" ]; then
   HD_TMP="$(mktemp -d)"
   mkdir -p "$HD_TMP/hello-dolly"
