@@ -147,7 +147,11 @@ pub fn register_p3_routes(router: &mut Router<Ctx>) {
                             &format!("Failed to fetch fixture \"{fixture}\": {e}"),
                         )
                     })?;
-                    Some((known.1, source))
+                    // The job runner's contract (see
+                    // `run_conversion_job`): `fixture_source` is
+                    // `(source, filename)` — the fetched PHP text
+                    // first, the fixture filename second.
+                    Some((source, known.1))
                 } else {
                     None
                 };
@@ -165,7 +169,7 @@ pub fn register_p3_routes(router: &mut Router<Ctx>) {
                 // same runner in production).
                 let fixture_ref = fixture_source
                     .as_ref()
-                    .map(|(name, source)| (*name, source.as_str()));
+                    .map(|(source, filename)| (source.as_str(), *filename));
                 // The conversion itself runs in the wordless-converter
                 // Worker (split, 2026-11-20); without it the job fails
                 // with a clear error instead of pretending it ran.

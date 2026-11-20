@@ -419,8 +419,8 @@ export const STEPS = [
     poll: { path: 'data.status', equals: 'done', timeoutMs: 60000 } },
   { id: 'conv-list', group: 'conversion', method: 'GET', path: '/api/conversion/jobs', auth: 'admin', expect: 200 },
   { id: 'conv-fixture', knownDiff: 'conv-fixture-502', group: 'conversion', method: 'POST', path: '/api/conversion/jobs', auth: 'admin',
-    body: { fixture: 'hello-dolly' }, expect: 502,
-    note: 'Fixture fetch hits raw.githubusercontent.com, unreachable from this VM — both workers must fail identically (P3 smoke note).' },
+    body: { fixture: 'hello-dolly' }, expect: [502, 201],
+    note: 'Fixture fetch hits raw.githubusercontent.com. 502 where it is unreachable (this VM: v1 creates a failed job, v2 answers 502 — known-diff conv-fixture-502); 201 where it succeeds (both create the job and the reports must match — the 3-vs-0 swap bug, fixed 2026-11-20, was caught here).' },
 
   // ---------------------------------------------------------- security
   { id: 'security-overview', group: 'security', method: 'GET', path: '/api/security/overview', auth: 'admin', expect: 200 },

@@ -761,9 +761,17 @@ mod tests {
         ))
         .expect("run");
         assert_eq!(done.status, ConversionJobStatus::Done);
+        let report = done.report.expect("report");
+        assert_eq!(report["extension"]["slug"], "hello-dolly");
+        // The function count pins the (source, filename) order: a
+        // swapped tuple hands the converter the 9-character filename
+        // as the source, which converts to 0 functions with no error
+        // (conv-fixture parity diff, 2026-11-20). The stub mirrors
+        // that — only a source containing the plugin text reports 3.
+        assert_eq!(report["ast"]["functions"], 3);
         assert_eq!(
-            done.report.expect("report")["extension"]["slug"],
-            "hello-dolly"
+            report["converted"]["functions"],
+            json!(["hello_dolly_get_lyric", "hello_dolly", "dolly_css"])
         );
     }
 

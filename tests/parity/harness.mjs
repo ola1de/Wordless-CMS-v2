@@ -365,6 +365,11 @@ function stripPaths(obj, paths) {
 
 function compareStep(step, r1, r2) {
   const issues = [];
+  // `expect` may be one status or a list: conv-fixture expects 502
+  // where the upstream fetch is unreachable and 201 where it
+  // succeeds, and both are correct on their machine.
+  const expected = step.expect === undefined ? [] : (Array.isArray(step.expect) ? step.expect : [step.expect]);
+  const expectedLabel = expected.join(' or ');
   if (step.v2only) {
     // P12 fix (was the P11 harness gap): v2-only steps previously
     // returned 'v2-only' without ANY check, so a wrong v2 status was
@@ -376,8 +381,8 @@ function compareStep(step, r1, r2) {
     if (step.expect === undefined) {
       return { outcome: 'unexpected', issues: [{ kind: 'expect-v2', v1: r1.status, v2: r2.status, why: 'v2-only step has no expect status — corpus bug' }] };
     }
-    if (r2.status !== step.expect) {
-      issues.push({ kind: 'expect-v2', v1: r1.status, v2: r2.status, why: `v2 returned ${r2.status}, expected ${step.expect}` });
+    if (!expected.includes(r2.status)) {
+      issues.push({ kind: 'expect-v2', v1: r1.status, v2: r2.status, why: `v2 returned ${r2.status}, expected ${expectedLabel}` });
     }
     if (step.expectBody !== undefined && !r2.rawText.includes(step.expectBody)) {
       issues.push({ kind: 'expectBody-v2', why: `v2 body does not contain ${JSON.stringify(step.expectBody)}` });
@@ -473,9 +478,9 @@ async function main() {
       // expected-status check (both match each other but miss the expectation).
       // v2-only steps are validated inside compareStep (P12 fix); skip here
       // so a v2-only step is never double-reported.
-      if (!step.v2only && r1.status === r2.status && step.expect !== undefined && r1.status !== step.expect) {
+      if (!step.v2only && r1.status === r2.status && step.expect !== undefined && !expected.includes(r1.status)) {
         outcome = 'unexpected';
-        issues.push({ kind: 'expect', v1: r1.status, v2: r2.status, why: `both returned ${r1.status}, expected ${step.expect}` });
+        issues.push({ kind: 'expect', v1: r1.status, v2: r2.status, why: `both returned ${r1.status}, expected ${expectedLabel}` });
       }
       if (!step.v2only && step.expectBody !== undefined) {
         const hit = r1.rawText.includes(step.expectBody) && r2.rawText.includes(step.expectBody);
