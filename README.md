@@ -1,13 +1,13 @@
 # WORDLESS v2.0 — Rust backend (Phases P1–P12 + size remedy: skeleton + Core CMS + Conversion/AI/Commerce + admin redesign + parity + extension runtime + social networking + converter split + WooCommerce + social/Woo split + school portal/CBT + school split + SEO depth + Visual Builder + Multisite)
 
 Repo: [ola1de/Wordless-CMS-v2](https://github.com/ola1de/Wordless-CMS-v2).
-**Do not deploy to production yet.** The v1.1.0 TypeScript worker stays
-live until v2 passes the cutover gate (staging deploy + user walkthrough +
-written approval). Nothing here touches the TS repo
-(`~/workspace/wordless/wordless-cms/`, read-only reference) or the live site.
 
-Plan: `~/workspace/wordless/docs/04-rust-v2-architecture.md` (§1, §2, §3 P1–P2).
-Converter prototype (P0): `~/workspace/wordless/rust-prototype/`.
+**Status: v2.0 is pre-release.** The current stable release is v1.1.0
+(TypeScript); v2.0 (Rust) has completed all 12 build phases and is pending
+staging validation before production cutover. The v1.1.0 worker stays live
+until cutover.
+
+Architecture and phase plan: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) · [`docs/cutover-runbook.md`](docs/cutover-runbook.md).
 Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (local dev, staging, cutover). Full cutover checklist: [`docs/cutover-runbook.md`](docs/cutover-runbook.md).
 
 ## Screenshots
@@ -15,8 +15,8 @@ Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) (local dev, staging, cuto
 Renders of the v2 design targets, taken from the interactive UI
 preview — **not photographs of the live admin**. The live site still
 runs v1.1.0; these screens show what each phase is building towards,
-and the real admin screenshots from the staging walkthrough will
-replace them after cutover.
+and real screenshots of the running admin, taken during staging
+validation, will replace them after cutover.
 
 | | |
 |---|---|
@@ -76,7 +76,7 @@ doc. Measured 2026-11-20, after `wasm-opt -Oz`:
 | `npm run size` | Reports all six WASM sizes vs the limit (exit 0 = all under) |
 | `npm run dev:split` | Converter :8805, social :8807, woo :8808, school :8809, seo :8812, then main :8787 with all five `WORDLESS_*_URL` vars set |
 | `npm run test` | `cargo test --workspace --lib` |
-| `npm run deploy:staging` / `deploy:production` | Guarded deploy: cargo tests + all six builds + size gates, then deploys social → woo → school → seo → converter → main, verifying `/api/health` and `/__social/health`, `/__woo/health`, `/__school/health`, `/__seo/health`, `/__convert/health` (user's machine only — no Cloudflare credentials in this VM) |
+| `npm run deploy:staging` / `deploy:production` | Guarded deploy: cargo tests + all six builds + size gates, then deploys social → woo → school → seo → converter → main, verifying `/api/health` and `/__social/health`, `/__woo/health`, `/__school/health`, `/__seo/health`, `/__convert/health` (operator's machine only — deployment needs the operator's Cloudflare login; no credentials are stored in the repository) |
 
 **Verification on the P12 build (2026-11-20, all measured):** cargo test
 **636/0** (baseline 630 + 6 multisite); smoke-p6 62/62, smoke-p7
@@ -137,7 +137,7 @@ implemented there (see below) — the P1 login was the plain password flow.
 Non-API, non-admin paths return the 404 envelope in P1 (public rendering
 is P2).
 
-Migrations 0001, 0002, 0005–0010 are copied read-only from the TS repo
+Migrations 0001, 0002, 0005–0010 are copied read-only from the v1 repo
 into `migrations/`; the originals are never edited.
 
 ## What P2 built (2026-11-19)
@@ -180,9 +180,9 @@ wiring first pushed it to **5,017,385 bytes** — 59% OVER the 3 MiB
 limit. Size-tuning the release profile (`strip = true`,
 `opt-level = "z"`) brought it to **3,179,092 bytes — still 33,364
 bytes (1.1%) over the free-tier limit**. wasm-opt `-Oz` (binaryen
-cannot be downloaded in this VM) is the remaining lever and is
+could not be downloaded at measurement time) is the remaining lever and is
 expected to close the gap; until it is measured on a machine that
-can download it, the binary is OVER the limit — do not deploy it
+can download it, the binary is OVER the limit — it must not be deployed
 to the free tier as-is. See Measurements below.
 
 **Open blockers / notes for P3 (both P2 gaps CLOSED in P3 wiring):**
@@ -205,7 +205,7 @@ to the free tier as-is. See Measurements below.
   recomputed from served CSS); `?wl_preview=` works via
   `resolve_variation`.
 - PBKDF2 R3 still open until a deployed measurement at P5 (see below).
-- `P2-NOTES.md` is coordinator working notes — remove before any push.
+- `P2-NOTES.md` was internal working notes — removed before the push.
 
 ## What P3 built (2026-11-19)
 
@@ -224,7 +224,7 @@ endpoint. Route list: `P2-NOTES.md` (P3 list) + `routes_p3.rs`.
 | --- | --- |
 | `wordless-conversion` | P0 prototype promoted: lexer/parser (verbatim from the prototype) + emitter (2,218-line port of v1 `emitter.ts`) + safety + analyser + auto-convert + jobs over `wl_jobs`. **Measured:** Hello Dolly (real `hello.php`) **3/3 functions, 2/2 hooks, 0 unconverted**, generated TS **byte-identical to the checked-in v1 fixture**; Twenty Twenty-Five **23 converted / 76 partial / 0 blocked of 99 PHP files — exactly the v1 M11 record**. The "generated-TS-still-typechecks" check is exact-string assertions (tsc cannot run inside `cargo test`). `analyze_php` verdicts follow the M11 auto-convert record; the faithful `analyze.ts` port is also present as `analysis::analyze_php`. |
 | `wordless-elementor` | `_elementor_data` renderer: sections → columns → 10 widgets (heading, text-editor, image, button, spacer, divider, video, icon-list, image-box, google-maps), depth limit 10, content only, no editor. Wired into `render_post_content` (falls back to block rendering when it renders nothing — the v1 rule). The escapers moved to `wordless-kernel::html` to break the render↔elementor cycle. |
-| `wordless-ai` | Providers (Workers AI default via native `worker::Ai`, OpenAI-compatible fallback, deterministic mock), orchestrator, all **15 agents**, approvals, memory. **Measured:** mock-provider task completes and approval creates **exactly one draft post** (test `supervised_task_creates_approval_and_approval_creates_exactly_one_draft`). Live Workers AI calls never observed in this VM (no account, no `[ai]` binding). `AgentContext.object_count` is `None` unless the worker supplies it. |
+| `wordless-ai` | Providers (Workers AI default via native `worker::Ai`, OpenAI-compatible fallback, deterministic mock), orchestrator, all **15 agents**, approvals, memory. **Measured:** mock-provider task completes and approval creates **exactly one draft post** (test `supervised_task_creates_approval_and_approval_creates_exactly_one_draft`). Live Workers AI calls have not been observed yet (no account connected, no `[ai]` binding). `AgentContext.object_count` is `None` unless the worker supplies it. |
 | `wordless-commerce` | Products, server-side cart (`wordless_cart` cookie), orders, HMAC webhooks (Paystack SHA512, Flutterwave `verif-hash`, Stripe SHA256 + 300 s tolerance, mock SHA256 — v1 test vectors ported, verified against Python-computed HMACs). **Measured:** mock checkout + signed webhook → order `paid`, stock 5→3; replay → `duplicate`, stock stays 3; bad signature → 401, order stays `pending`. `start_checkout` appends `?order=<id>` to the provider return URLs (v1 behaviour). Real-provider checkout HTTP lives in the worker (`gateways.rs`, never verified live — no keys). |
 | `wordless-integrations` | Registry (8 integrations, live configured detection), config with secret rejection, email (mock logs to `wl_mail_log`, `delivered: false`; HTTP provider via `EMAIL_API_KEY`), analytics snippets, social share links, cloudflare binding status, `wl_extensions` + marketplace ZIP install (10,000/50 MB, manifest, traversal rejection) + compat reports. |
 | `wordless-security` | `security_overview`: audit log (20), live lockout state, TOTP status, active session count, 6 security headers, failed-login tail. The Security Centre route is `GET /api/security/overview`. |
@@ -283,8 +283,8 @@ download binaryen (expected to close the 1.1% gap — not measured
 here). Alternatives if `-Oz` does not close it: split the conversion
 engine out of the Worker (it already runs as an async job — the
 natural split candidate), or Workers Paid ($5/mo, 10 MB limit).
-Do not deploy this binary to the free tier as-is, and do not claim
-the size is fine.
+This binary must not be deployed to the free tier as-is, and the size
+must not be claimed as fine.
 
 ## What P4 (API) built (2026-11-19)
 
@@ -457,7 +457,7 @@ register/update/delete service functions into the binary for the first
 time (they were only referenced by unit tests), plus the new
 profile/scheduling/plugins/branding code and the scheduled handler. The
 over-limit blocker from P3 is therefore worse, not better — wasm-opt
-`-Oz` (still unmeasurable in this VM) or the split/paid-tier decision is
+`-Oz` (still unmeasured) or the split/paid-tier decision is
 now more urgent, and must be settled before any deploy.
 
 **What P3 did NOT do (explicitly out of scope / still open):**
@@ -474,7 +474,7 @@ now more urgent, and must be settled before any deploy.
   still requires the staging parity run.
 - Live Workers AI calls, live payment-provider checkouts, and live
   HTTP email delivery have never been observed (no keys/accounts
-  connected, by design).
+  connected).
 - Converted plugins/themes still do not run (P6 extension runtime).
 - No CPT/taxonomy REST routes (service only) — P4 added them (see
   "What P4 (API) built").
@@ -492,11 +492,11 @@ admin/tsconfig.json --noEmit` both pass.
 **Package + build script.** `admin/package.json`: react + react-dom
 ^18.3.1; devDeps vite ^6, @vitejs/plugin-react ^4.3.0, typescript ^5.9.0,
 @types/react + @types/react-dom ^18.3.0, @types/node ^24.0.0 (same
-versions as the TS repo's package.json). `scripts/build-admin.sh` builds
+versions as the v1 repo's package.json). `scripts/build-admin.sh` builds
 the admin: on a normal machine it runs `npm install` in `admin/` first
-if `node_modules` is absent, then vite build; in this VM (npm registry
-unreachable) it uses the TS repo's vite binary with the existing
-`admin/node_modules` symlink (a VM-local build aid, never committed —
+if `node_modules` is absent, then vite build; where the npm registry is
+unreachable it uses the v1 repo's vite binary with the existing
+`admin/node_modules` symlink (a local build aid, never committed —
 see the script's header comment). Dist layout unchanged: `dist/admin/`
 (vite outDir `dist/admin`, base `/admin/`), SPA entry at
 `/admin/index.html`.
@@ -565,7 +565,7 @@ localStorage (`wl_admin_theme`) and the top bar shows "Saved locally".
 exposes a theme switcher `<select>` with all 8 themes in the top bar;
 Cmd/Ctrl+K opens the command palette (nav pages + New post + Log out).
 
-**Bundle sizes (measured 2026-11-19, this VM).** Baseline (pre-P4):
+**Bundle sizes (measured 2026-11-19, locally).** Baseline (pre-P4):
 JS 309,044 B / gzip 87.64 kB, CSS 17,593 B / gzip 4.47 kB. After P4:
 **JS 325,290 B / gzip 92.75 kB** (+16,246 B, +5.3%), **CSS 31,942 B /
 gzip 7.50 kB** (+14,349 B — the 8 theme sets + element library). Theme
@@ -590,7 +590,7 @@ logo/colours/background/layout/custom CSS) are still P4 scope, not done
 here.
 
 **Incidents during P4 (recorded honestly).** (1) The icon generator
-briefly wrote its output to the TS repo's `icons.tsx` (OUT path pointed
+briefly wrote its output to the v1 repo's `icons.tsx` (OUT path pointed
 at the reference file instead of the Rust admin). Caught immediately;
 the file was restored byte-identical from the GitHub main copy
 (md5-verified) — 414 lines, no P4 icons. No other TS-repo file was
@@ -686,12 +686,12 @@ re-read; reset returned a 16-char temporary password once; login
 with it returned `mustChangePassword: true`; change-password then
 login with the new password returned `false`. Bundle strings for all
 three screens verified in the live-served JS. NOT verified live: a
-headless-browser click-through (no Chromium/Playwright/Puppeteer in
-this VM) — UI flows were verified via the API + the built bundle,
+headless-browser click-through (no Chromium/Playwright/Puppeteer
+available locally) — UI flows were verified via the API + the built bundle,
 not by driving the SPA; the 360 px check is the existing mobile-first
 CSS (single-column cards, no new styles added).
 
-**Bundle sizes (measured 2026-11-19, this VM).** Editor-only
+**Bundle sizes (measured 2026-11-19, locally).** Editor-only
 checkpoint (before Plugins/Users/App): **JS 362,740 B** (+37,450 B vs
 the 325,290 B foundation build), CSS unchanged 31,942 B. Final build
 **JS 400,530 B / gzip 118.31 kB, CSS 40,814 B / gzip 9.01 kB** —
@@ -738,7 +738,7 @@ edited here, resolved when their edit landed.
    password before entering the admin; no skip. Live-verified in
    `scripts/smoke-p4-api.sh` (115 passed, 0 failed). One remaining
    gap: `App.tsx` session restore does not check the flag — recorded
-   for the coordinator in that section.
+   as an open item in that section.
 
 ## What P4 (screen redesign) built (2026-11-19)
 
@@ -797,7 +797,7 @@ link/surface — all ≥ AA 4.5: teal 14.94/7.64/5.06, midnight
 16.05/7.51/9.86, ocean 15.58/7.27/6.70, forest 15.02/6.72/7.13,
 sunset 15.39/6.58/7.09, berry 15.99/7.75/7.88, slate 16.30/6.32/10.35,
 contrast 21.00/12.63/10.11. A per-theme visual re-check of every
-screen in a browser is still open (no browser in this VM).
+screen in a browser is still pending a browser-based review.
 
 **Login customiser** (Settings → Appearance → Login page): logo
 upload (media library) or URL, accent + deep colours, background
@@ -848,8 +848,8 @@ clean room, :8799): temp login signals `mustChangePassword`,
 → `mustChangePassword: false`. The forced-change strings are in the
 live-served bundle (`index-OglReG3E.js`: "Choose a new password",
 "Set new password and sign in", "Back to sign-in",
-`mustChangePassword` ×3). **Session restore — CLOSED by the
-coordinator (2026-11-19):** `App.tsx` now checks the flag on `/me`;
+`mustChangePassword` ×3). **Session restore — CLOSED
+(2026-11-19):** `App.tsx` now checks the flag on `/me`;
 when set it revokes the session (best effort), shows the sign-in page
 with an explanation notice, and does not enter the admin — the Login
 page's forced-change step takes over after sign-in with the temporary
@@ -878,8 +878,8 @@ colour, 720px content size, display size, accent `#0F766E`;
 live returns the v1 defaults.
 
 **QA (§6.4) — per item, with evidence.**
-- 1440/768/360px review: OPEN — no headless browser in this VM
-  (`/tmp/pw` Playwright absent; `shots-capture.mjs` cannot run).
+- 1440/768/360px review: pending a browser-based review
+  (Playwright unavailable, so `shots-capture.mjs` cannot run).
   Static check only: breakpoints 900/760/400px in `styles.css`,
   P4 styles collapse the customizer/preview at 900px and hide the
   preview panel at 400px; no redesigned page sets a fixed width.
@@ -916,7 +916,7 @@ live returns the v1 defaults.
   non-live note is the social sign-in toggle (no provider
   configured, so no button is rendered).
 
-**Blockers / decisions for the coordinator.**
+**Blockers / decisions.**
 1. **Theme 0.7.0 registry mismatch — API worker must update two
    Rust lines** (editing `.rs` is forbidden to this workstream).
    `crates/wordless-themes/src/registry.rs:56`
@@ -932,7 +932,7 @@ live returns the v1 defaults.
    0 parse errors) gives **2346 bytes / hash `b2f0cc32848c`**,
    and the Rust test now measures 2346 bytes too — the API
    worker should update the golden to those values and re-run.
-2. **App.tsx session restore gate — CLOSED by the coordinator
+2. **App.tsx session restore gate — CLOSED
    (2026-11-19)** — see the forced-change note above.
 3. **No server-side media search** (`GET /api/media` has no search
    param) — Media search/date filters are client-side over the
@@ -940,12 +940,12 @@ live returns the v1 defaults.
    (edit = delete + add, stated in the UI); no API to change role
    defaults (constants in `lib/theme.ts`).
 4. **No per-theme visual check and no keyboard walkthrough in a
-   real browser** — Playwright is unavailable in this VM; the
-   coordinator handles capture separately. Do not claim
+   real browser** — Playwright is unavailable locally; screenshot
+   capture is handled separately. Do not claim
    screenshots exist.
 5. **WASM over-limit (carried over, not this workstream):**
-   3,291,933 bytes per the P4 API section — do not deploy to the
-   free tier as-is; wasm-opt `-Oz` remains the lever.
+   3,291,933 bytes per the P4 API section — it must not be deployed
+   to the free tier as-is; wasm-opt `-Oz` remains the lever.
 
 ## What P5 built — parity suite, staged cutover (2026-11-19)
 
@@ -953,8 +953,9 @@ P5 is the proof phase: a permanent differential harness that runs the
 same seeded D1 against v1 (TypeScript) and v2 (Rust) and diffs every
 response, measured latency, a rollback rehearsal that swaps one D1
 file between the two binaries, and the cutover runbook with the
-deploy/seed guards the user's machine runs. **Nothing was deployed
-from this VM** — there are no Cloudflare credentials here by design.
+deploy/seed guards the operator's machine runs. **Nothing has been
+deployed yet** — deployment requires the operator's Cloudflare login;
+no credentials are stored in the repository.
 
 ### The parity harness (`tests/parity/`)
 
@@ -990,7 +991,7 @@ from this VM** — there are no Cloudflare credentials here by design.
   conversion-fixture 502 (deliberate v2 design), the extra
   `mustChangePassword` field, and the backup-schema delta.
 - `run-parity.sh`: clean room (`rm -rf` both `.wrangler` dirs),
-  v1 scratch copy via tar (the TS repo is never modified;
+  v1 scratch copy via tar (the v1 repo is never modified;
   node_modules symlinked back), fixtures built by python3 (PNG,
   theme ZIPs, hello-dolly.zip — `rm -f` first: `zip -r` UPDATES an
   archive instead of replacing it, and a stale flat `hello.php`
@@ -1087,8 +1088,8 @@ rollback needs no data work. Run: `node tests/parity/rollback.mjs`.
 ### Cutover runbook + deploy/seed guards
 
 - `docs/cutover-runbook.md`: prerequisites (size decision, written
-  user approval, v2 repo location Q1, toolchain), exact PowerShell
-  commands for the user's machine in order with expected output at
+  sign-off from the project owner, v2 repo location Q1, toolchain), exact PowerShell
+  commands for the operator's machine in order with expected output at
   each step, staging deploy + verify, the R3 deployed-PBKDF2
   measurement (bar: login CPU < 10 ms on the free tier), the staging
   soak checklist (incl. the P4 open items: §6.4 visual review at
@@ -1097,7 +1098,7 @@ rollback needs no data work. Run: `node tests/parity/rollback.mjs`.
   production cutover (backup first, then deploy, then verify incl.
   an existing browser session surviving), rollback
   (`wrangler rollback --env production`, or redeploy the v1 commit),
-  and the 17 known diffs the user will see on staging.
+  and the 17 known diffs visible on staging.
 - `scripts/deploy.mjs` (+ `package.json`, `npm run deploy:staging` /
   `deploy:production`): refuses without `--env` + `--confirm`; runs
   cargo tests + the WASM build; enforces the **WASM size gate**
@@ -1130,7 +1131,7 @@ rollback needs no data work. Run: `node tests/parity/rollback.mjs`.
 
 - **WASM over the limit: 3,328,519 bytes, 105.8%, 182,791 over**
   (+10,392 vs P4 — the parity fixes). Size decision resolved
-  2026-11-19 ~23:30 WAT (user: no money, Workers Paid OUT, free tier
+  2026-11-19 ~23:30 WAT (decision: no budget, Workers Paid OUT, free tier
   hard limit; wasm-opt first, split the converter second) and the
   split was implemented 2026-11-20 (see "Converter split" below):
   main 3,004,187 (95.5%), converter 603,285 (19.2%).
@@ -1138,8 +1139,9 @@ rollback needs no data work. Run: `node tests/parity/rollback.mjs`.
   step 6). Local login wall ~86 ms is not the number.
 - **P4 visual items** open until the staging soak (runbook step 7).
 - **P5 exit gate NOT met**: no staging deploy and no production
-  cutover happened here (no credentials by design); the gate needs
-  the size decision, the user's written approval, and the user-run
+  cutover yet (deployment requires the operator's Cloudflare login;
+  none is stored in the repository); the gate needs
+  the size decision, sign-off from the project owner, and the operator-run
   deploy + soak. Local evidence (harness 0 unexplained, rollback
   15/15) is complete.
 
@@ -1149,9 +1151,10 @@ P6 is the phase that makes "supports WordPress plugins" a true
 statement. Before it, converted code was stored in R2 and never
 executed; now a converted plugin or theme loads into a sandboxed
 extension Worker of its own and its hooks fire, with every WordPress
-call capability-checked against a per-extension grant. **Nothing was
-deployed from this VM** — there are no Cloudflare credentials here by
-design; the deployed proof for both production paths is still open.
+call capability-checked against a per-extension grant. **Nothing has been
+deployed yet** — deployment requires the operator's Cloudflare login;
+no credentials are stored in the repository. The deployed proof for both
+production paths is still open.
 
 ### Sandbox decision (measured 2026-11-19, BEFORE any extension code ran — §7 Q10)
 
@@ -1164,7 +1167,7 @@ design; the deployed proof for both production paths is still open.
   EXT needs to be run remotely`. Needs a deployed test.
 - **⚠️ Workers for Platforms is NOT free: $25/mo, no free tier**
   (verified against Cloudflare's WFP pricing page via two independent
-  summaries; re-check at deploy time). The user has no money — not
+  summaries; re-check at deploy time). There is no budget — not
   even Workers Paid ($5/mo) — so dispatch namespaces are gated on
   money, not code. The free-tier production path is **service
   bindings**: each extension is a normal account-level Worker (free
@@ -1180,9 +1183,9 @@ design; the deployed proof for both production paths is still open.
   times the free-tier limit for the engine alone — and **panics at
   runtime** on wasm32-unknown-unknown (`std::time::Instant::now`
   inside `ContextBuilder::build`). rquickjs was not built (no wasm32
-  C toolchain in this VM) — moot, since any real JS engine is ≥700 KB
-  against zero headroom. The free-tier constraint (user decision
-  2026-11-19 ~23:30 WAT: Paid OUT, 3 MB hard) decides Q10 on size
+  C toolchain available locally) — moot, since any real JS engine is ≥700 KB
+  against zero headroom. The free-tier constraint (project-owner
+  decision 2026-11-19 ~23:30 WAT: Paid OUT, 3 MB hard) decides Q10 on size
   alone as well as on isolation: dispatch namespaces add zero bytes
   to the main binary; Boa would add ~8.7 MiB.
 
@@ -1293,7 +1296,7 @@ design; the deployed proof for both production paths is still open.
 
 ### Publish script (`scripts/publish-extensions.mjs`, `npm run publish-extension`)
 
-User-machine script: `<slug> --env staging|production --confirm
+Operator-machine script: `<slug> --env staging|production --confirm
 [--dispatch-namespace <name>] [--source theme] [--skip-main-redeploy]`.
 whoami guard (wrangler exits 0 even logged out). Downloads the
 generated project from R2 via `wrangler r2 object get` (this wrangler
@@ -1304,7 +1307,7 @@ add the `[[env.<env>.services]]` binding to the main wrangler.toml,
 redeploy the main Worker (the deploy script enforces the WASM size
 gate). Dispatch path: `wrangler deploy --dispatch-namespace <name>`
 (needs WFP $25/mo; a 403 means the account lacks it). **NOT verified
-live** (no Cloudflare account in this VM) — the first live run is a
+live** (no Cloudflare account connected) — the first live run is a
 real test.
 
 ### Admin UI — Plugins page (`admin/src/pages/Plugins.tsx`, 296 → 744 lines)
@@ -1322,7 +1325,7 @@ runs with level badges; load-refusal panel showing the exact
 `/api/extensions/runtime` (fixed after the route-shadowing fix above);
 `listExtensions()` still returns the P3 array. `Conversion.tsx` copy
 updated ("stored code runs once loaded through the sandboxed runtime").
-No end-to-end verification of the admin UI yet — the parent verifies
+No end-to-end verification of the admin UI yet — to be verified
 live. Theme loading via `source=theme` has no Themes-page UI yet.
 
 ### P6 smoke (`scripts/smoke-p6.sh`, port 8800 main; 8801 hello-dolly; 8802 runaway; 8803 TT25) — 62/62 PASS
@@ -1374,7 +1377,7 @@ v1 p50 61.5 / p95 215.9 | v2 p50 73.8 / p95 221.1 (same band as run 5:
 double-prefix fix, enqueue capability, /runtime route) caused zero
 parity regressions.
 
-### Tests & size (measured 2026-11-19, this VM)
+### Tests & size (measured 2026-11-19, locally)
 
 - `cargo test --workspace --lib`: **516 passed, 0 failed** (P5: 480;
   +36: extensions 28, conversion +2, worker +6). Per crate: ai 34,
@@ -1384,8 +1387,8 @@ parity regressions.
   seo 27, themes 63, webhooks 5, worker 10.
 - WASM `index_bg.wasm`: raw (no-opt) **3,512,198 bytes (111.6% of the
   3 MiB limit, 366,470 over)** — P6 added 183,679 bytes over P5.
-  With wasm-opt `-Oz` (binaryen 0.132, same flags as the parent's
-  size-fix patch, measured on a COPY in a scratch dir — the patch
+  With wasm-opt `-Oz` (binaryen 0.132, same flags as the size-fix
+  patch, measured on a COPY in a scratch dir — the patch
   itself is NOT applied to this workspace yet): **3,059,170 bytes
   (97.2%, 86,558 headroom, ratio 0.8710)** — P6 FITS the free tier
   once the patch lands. Functional verification of the P6 `-Oz`
@@ -1405,8 +1408,8 @@ parity regressions.
 - **R3 (PBKDF2 CPU)** still open until a deployed measurement.
 - **P6 exit gate NOT met**: no staging deploy (no credentials by
   design); needs the size-fix patch applied, a staging deploy of one
-  real extension through a published service binding, and the user's
-  written approval.
+  real extension through a published service binding, and sign-off
+  from the project owner.
 - The full 99-file TT25 entry as a Worker (template/pattern files are
   render fragments, not runnable modules); `media_handle_upload` and
   `wp_schedule_event` still load-blocking; admin UI end-to-end
@@ -1424,7 +1427,7 @@ parity regressions.
   pinned wasm-bindgen CLI is 0.2.130, exactly the workspace version. The
   D1/Env/Request/Response/event-macro surface used here is unchanged
   between 0.5 and 0.9 — the worker crate compiled cleanly after the bump
-  with no code changes. **Flag for the parent: fold the 0.9 pin into
+  with no code changes. **Open item: fold the 0.9 pin into
   doc v1.3.**
 - **worker-build must run from the crate directory** (`cd
   crates/wordless-worker && worker-build …`). Invoking it with a PATH
@@ -1432,14 +1435,14 @@ parity regressions.
   in the real out_dir while the shim step looks for `staging/index.js`
   and fails with a bare "No such file or directory". `wrangler.toml`
   therefore builds via `bash scripts/build-worker.sh`, which cds first.
-- **VM download workarounds:** this VM cannot fetch from GitHub releases
-  or the npm registry (TLS `UnknownIssuer`). `scripts/build-worker.sh`
-  supplies worker-build's tools from local installs when present:
-  `WASM_BINDGEN_BIN=$HOME/.cargo-wb01/bin/wasm-bindgen` (wasm-bindgen-cli
-  0.2.130, cargo-installed) and `ESBUILD_BIN` (v1 repo's Vite esbuild
-  0.28.2, read-only reuse). On a normal machine both are unset and
-  worker-build downloads its own tools.
-- **`--no-opt`:** wasm-opt (binaryen) also cannot be downloaded here.
+- **Download workarounds:** the build environment cannot fetch from
+  GitHub releases or the npm registry (TLS `UnknownIssuer`).
+  `scripts/build-worker.sh` supplies worker-build's tools from local
+  installs when present: `WASM_BINDGEN_BIN` (wasm-bindgen-cli 0.2.130,
+  cargo-installed) and `ESBUILD_BIN` (v1 repo's Vite esbuild 0.28.2,
+  read-only reuse). On a normal machine both are unset and worker-build
+  downloads its own tools.
+- **`--no-opt`:** wasm-opt (binaryen) could not be downloaded either.
   The unoptimized WASM is ~800 KiB, far under the 3 MB script limit.
 - `worker-macros` + `syn` workaround: worker-macros declares `syn 2`
   with no features, and nothing in the host graph enables `syn/full`,
@@ -1521,7 +1524,7 @@ created — a future phase can add it without touching the friends model.
   (hide), messaging overview. Admin bundle JS 423.09 kB (was 422.96
   kB), tsc clean.
 
-### Tests & size (measured 2026-11-20, this VM)
+### Tests & size (measured 2026-11-20, locally)
 
 - `cargo test --workspace --lib`: **540 passed, 0 failed** (P6
   baseline 516 + 24 new P7: 14 visibility-rule unit tests + 10
@@ -1541,7 +1544,7 @@ created — a future phase can add it without touching the friends model.
   was 3,059,170 (97.2%) — P7 added 145,232 bytes post-Oz. **No
   features were deleted to fit.** Consequence: `npm run build` FAILS
   (size gate exits 1) and `wrangler dev` cannot start — the smoke and
-  parity runs above used the local-only bypass
+  parity runs above used the local-dev bypass
   `WORDLESS_NO_WASM_OPT=1` (serves the raw build locally; the deploy
   gate still refuses the binary). **Decision needed: the
   converter-split fallback (SIZE-REPORT.md §5) or another lever.**
@@ -1552,9 +1555,10 @@ created — a future phase can add it without touching the friends model.
   converter split (section below):** main 3,004,187 bytes (95.5%),
   converter 603,285 bytes (19.2%). P7 is deployable on the free tier
   again (subject to the staging gate).
-- **P7 exit gate NOT met**: no staging deploy (no credentials by
-  design); needs a staging deploy with a seeded community, and the
-  user walking through it on a phone with moderation demonstrated live.
+- **P7 exit gate NOT met**: no staging deploy yet (deployment
+  requires the operator's Cloudflare login); needs a staging deploy with
+  a seeded community, and an operator walking through it on a phone with
+  moderation demonstrated live.
 - **R3 (PBKDF2 CPU)** still open until a deployed measurement.
 - No live email observed (mock provider only); no push notifications;
   no @mention autocomplete in the admin UI; messages are text-only
@@ -1563,7 +1567,7 @@ created — a future phase can add it without touching the friends model.
 ## Converter split — free-tier fallback (2026-11-20, between P7 and P8)
 
 P7 pushed the single Worker over the free-tier limit (3,204,402
-bytes, 101.9%), so the fallback the user approved on 2026-11-19
+bytes, 101.9%), so the fallback approved on 2026-11-19
 (wasm-opt first, split the converter second) was implemented:
 
 | Worker | Raw build | After wasm-opt -Oz | % of 3,145,728 | Headroom |
@@ -1706,7 +1710,7 @@ atomically with the paid transition — never at apply time.
   payments, marketplace. Admin bundle JS 448.31 kB (was 404.20 kB
   at P4), tsc clean.
 
-### Tests & size (measured 2026-11-20, this VM)
+### Tests & size (measured 2026-11-20, locally)
 
 - `cargo test --workspace --lib`: **574 passed, 0 failed** (split
   baseline 549 + 23 new Woo tests + 2 commerce variation tests).
@@ -1746,19 +1750,18 @@ atomically with the paid transition — never at apply time.
   post-Oz**. Converter unchanged at **603,285 bytes (19.2%)**.
   `npm run build` FAILS at the size gate (exit 1) and plain
   `wrangler dev` cannot start — the smoke and parity runs above
-  used the local-only bypass `WORDLESS_NO_WASM_OPT=1`
+  used the local-dev bypass `WORDLESS_NO_WASM_OPT=1`
   (documented in `scripts/smoke-p8.sh`; serves the unoptimized
   build locally, behaviourally identical; never a deploy path).
   **No features were deleted to fit.**
-- **P8 exit gate NOT met**: no staging deploy (no credentials by
-  design), and the size must be resolved first. Levers for the
-  parent to decide: apply the converter-split pattern to another
-  crate (Woo import or social out via service binding),
-  release-profile tuning, or Workers Paid — ruled out, the user
-  has no money.
+- **P8 exit gate NOT met**: no staging deploy yet (deployment
+  requires the operator's Cloudflare login), and the size must be
+  resolved first. Levers to decide: apply the converter-split pattern
+  to another crate (Woo import or social out via service binding),
+  release-profile tuning, or Workers Paid — ruled out, no budget.
 - **R3 (PBKDF2 CPU)** still open until a deployed measurement.
-- No live payment-provider checkout observed (mock only, by
-  design); no live email; no subscriptions/memberships (P8 forward
+- No live payment-provider checkout observed (mock only; no
+  live keys connected); no live email; no subscriptions/memberships (P8 forward
   pointer, §9).
 
 ## What P9 built — School portal + CBT (2026-11-20)
@@ -1847,7 +1850,7 @@ SHA-256 of (attempt, user, exam, issued-at-ms).
   shown on the page. Admin bundle JS 468.38 kB (was 448.31 kB at P8),
   `tsc` clean.
 
-### Tests & size (measured 2026-11-20, this VM)
+### Tests & size (measured 2026-11-20, locally)
 
 - `cargo test --workspace --lib`: **596 passed, 0 failed** (574 split
   baseline + 22 new school tests: 10 grading unit tests + 12 service
@@ -2021,13 +2024,14 @@ JSON-LD node is rendered by the school Worker on course pages, via core.
   were deleted to fit.** **RESOLVED the same day (2026-11-20) by the SEO
   split:** main Worker now **2,854,587 bytes (90.7%), 145,413 under the soft
   target**, 291,141 headroom; SEO Worker 800,785. P11 is unblocked on size.
-- **Lighthouse NOT measured locally.** There is no browser/Chromium in this
-  VM and the parity harness has no Lighthouse support, so the doc's targets
+- **Lighthouse NOT measured.** There is no browser/Chromium available
+  locally and the parity harness has no Lighthouse support, so the doc's targets
   (SEO 100, A11y ≥ 95, Perf ≥ 90, Best Practices ≥ 90; LCP < 2.5 s, INP <
   200 ms, CLS < 0.1) are **not claimed** for any page. The audit machinery
   above exists precisely so a real staging run can be recorded per URL.
   **P10 exit gate NOT met** (needs staging deploy + Lighthouse runs + the
-  user seeing the scores; no credentials by design). R3 stays open.
+  project owner seeing the scores; deployment requires the operator's
+  Cloudflare login). R3 stays open.
 - Honest limits: validator is structural, not Google's Rich Results Test;
   variable products report the parent's minimum price and are reported in
   stock; video sitemap only with a featured-image thumbnail; llms caps
@@ -2114,11 +2118,12 @@ the full icon library, not a subset.
 
 ### What P11 did NOT close
 
-- **Exit gate NOT met:** no staging deploy (no credentials by design);
-  the user walkthrough (build a page unaided on phone + desktop,
-  publish it) has not happened. §6.4 visual review (1440/768/360),
-  per-theme visual re-check, keyboard walkthrough and screenshot
-  retake were NOT done locally (no browser in this VM) — staging soak.
+- **Exit gate NOT met:** no staging deploy yet (deployment requires
+  the operator's Cloudflare login); the operator walkthrough (build a
+  page unaided on phone + desktop, publish it) has not happened. §6.4
+  visual review (1440/768/360), per-theme visual re-check, keyboard
+  walkthrough and screenshot retake were NOT done locally (no browser
+  was available) — staging soak.
 - Extension widgets do not render publicly yet (listed as unsupported).
   No real WordPress Elementor export file was exercised locally (the
   import path is proven at the data level: parse + render).
@@ -2134,7 +2139,8 @@ the full icon library, not a subset.
 shared users and code, per-site content/settings/themes, a site switcher
 in the admin, per-site domains. The final build phase: P0–P12 are now all
 complete locally; after P12 only the cutover gate remains (staging deploy
-from the user's machine, the user's walkthrough, written approval).
+from the operator's machine, the operator walkthrough, sign-off from the
+project owner).
 
 ### Data model + routing (`wordless-multisite`, migration `0018_p12.sql`)
 
@@ -2214,11 +2220,11 @@ from the user's machine, the user's walkthrough, written approval).
 
 ### What P12 did NOT close
 
-- **Exit gate NOT met:** no staging deploy (no credentials by design);
-  two live sites on staging under one install, walked through by the
-  user, have not happened. **R3 (PBKDF2 CPU)** still open until a
-  deployed measurement.
-- **Honest limits (network-wide in P12, by design):** WooCommerce,
+- **Exit gate NOT met:** no staging deploy yet (deployment requires
+  the operator's Cloudflare login); two live sites on staging under one
+  install, walked through by the operator, have not happened.
+  **R3 (PBKDF2 CPU)** still open until a deployed measurement.
+- **Honest limits (network-wide in P12):** WooCommerce,
   social and school tables are NOT site-scoped; `wl_ai_memory` is
   shared (inline UNIQUE on `key` — scoping it needs a table rebuild);
   `wl_media_derivatives` has no site_id column (gated by the
@@ -2295,7 +2301,7 @@ WORDLESS_NO_WASM_OPT=1 ./scripts/smoke-p8.sh  # 121 passed, 0 failed (2026-11-20
 # budgets, audit runs, sitemap viewer, 404/401 denials — 89 checks, port
 # 8811 (starts the school Worker on :8809 for the course page)
 ./scripts/smoke-p10.sh           # 89 passed, 0 failed (2026-11-20, clean room)
-# Publish an extension Worker from the user's machine (needs wrangler login):
+# Publish an extension Worker from the operator's machine (needs wrangler login):
 node scripts/publish-extensions.mjs hello-dolly --env staging --confirm  # NOT verified live yet
 ```
 
@@ -2303,7 +2309,7 @@ Smoke seeds one admin the v1 way (login `admin`, password
 `smoke-admin-2026`, PBKDF2 hash generated by Node `crypto.pbkdf2Sync`,
 local D1 only). `smoke-p3.sh` is `smoke-p2.sh` plus the P3 surface:
 conversion upload (real `hello.php` → done, 3 functions) + fixture
-attempt (502 from this VM — upstream unreachable; documented in the
+attempt (502 — upstream unreachable from the local network; documented in the
 script, not a failure), AI task → approval → exactly one draft,
 integrations, marketplace install + compat report (verdict
 `compatible`, 1 PHP file, 1 converted, conversion record present),
@@ -2325,23 +2331,23 @@ Never `pkill -f` with a pattern that appears in your own command
 line — it SIGTERMs your own shell; use the `wrangle[r]` bracket trick
 or kill by PID (or `fuser -k <port>/tcp`).
 
-## Measurements (all run 2026-11-19, this VM)
+## Measurements (all run 2026-11-19, locally)
 
 **WASM size (release, `--no-opt`, clean build): `index_bg.wasm`
 3,328,519 bytes (~3.17 MiB)** at P5 — **105.8% of the 3 MB free-tier
 script limit, 182,791 bytes over** (P4: 3,318,127 bytes, 105.5%; P3:
 3,179,092 bytes, 101.1%; P2: 2,662,192 bytes, 85%; P1: 816,324 bytes,
 26%). Bundled JS entry `index.js` 32.2 KiB. Size ladder, all measured
-2026-11-19 on this VM: first P3 wiring build 5,017,385 →
+2026-11-19 locally: first P3 wiring build 5,017,385 →
 `strip = true` 4,319,346 → `opt-level = "z"` **3,179,092** →
 `panic = "abort"` tried, 3,182,736 (worse — reverted). A wasm-opt
-`-Oz` pass (not possible in this VM — binaryen cannot be downloaded)
+`-Oz` pass (not possible locally at the time — binaryen could not be downloaded)
 is the remaining lever and is expected to close the gap; until it is
 measured, the binary is OVER the free-tier limit. `scripts/deploy.mjs`
 enforces the gate (refuses a free-tier deploy; `--paid` allows 10 MiB).
 
-**Update 2026-11-20 (converter split):** binaryen 132 installs in
-this VM (`npm install binaryen`), so `-Oz` runs in both build scripts,
+**Update 2026-11-20 (converter split):** binaryen 132 installs via npm
+(`npm install binaryen`), so `-Oz` runs in both build scripts,
 and the converter was split out (see "Converter split" above): main
 **3,004,187 bytes (95.5%)**, converter **603,285 bytes (19.2%)** —
 both under the limit, `npm run size` exit 0. The pre-split history
@@ -2407,7 +2413,7 @@ workerd overhead.
   172,399-byte gap, split the conversion engine out of the Worker or
   use Workers Paid ($5/mo, 10 MB limit). P4 made this worse, not
   better — see "What P4 (API) built".
-- **wasm-opt is off in this VM** (binaryen download blocked).
+- **wasm-opt is off in the local build** (binaryen download blocked).
 - **PBKDF2 R3:** the free-tier CPU question is not closed until a
   deployed measurement exists (P5). If WebCrypto counts fully toward
   the 10 ms budget, the login path needs rethinking (e.g. fewer
@@ -2427,9 +2433,9 @@ workerd overhead.
 - **Parity harness (§5.1) — DONE in P5** (see "What P5 built"): 320
   steps, 0 unexplained diffs (run 5); rollback rehearsal 15/15; the
   cutover runbook is `docs/cutover-runbook.md`. The P5 exit gate is
-  still open — no staging deploy happened here (no credentials by
-  design); it needs the size decision, the user's written approval,
-  and the user-run deploy + soak.
+  still open — no staging deploy has happened yet (deployment requires
+  the operator's Cloudflare login); it needs the size decision, sign-off
+  from the project owner, and the operator-run deploy + soak.
 - **P4 scope starts with:** the §0.1 A fixes (editor categories/tags/
   featured image/excerpt/scheduling, dedicated Plugins page, fully
   editable user profiles) FIRST, then the §6 redesign, then dashboard

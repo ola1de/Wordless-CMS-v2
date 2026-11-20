@@ -1,11 +1,12 @@
 # WORDLESS v2.0 — Cutover runbook (Phase P5)
 
-**Status: local evidence complete; staging and production steps are user
-steps.** Nothing in this runbook deploys anything from the development VM —
-there are no Cloudflare credentials there by design. Every deploy step
-runs on the user's own Windows machine, in order, with the expected
-output written next to it. If a step's output does not match, stop and
-do not continue to the next step.
+**Status: local evidence complete; staging and production steps are
+operator steps.** Nothing in this runbook deploys anything on its own —
+deployment needs the operator's Cloudflare login; no credentials are
+stored in the repository. Every deploy step runs on the operator's own
+Windows machine, in order, with the expected output written next to it.
+If a step's output does not match, stop and do not continue to the next
+step.
 
 **Companion evidence (all local, measured 2026-11-19):**
 - Parity run 5: 320 steps, 265 match, 17 classified known diffs,
@@ -33,9 +34,9 @@ do not continue to the next step.
 
 ## 1. Prerequisites — decisions first, no deploys until all are done
 
-### 1a. The WASM size decision (OWNER: user — RESOLVED 2026-11-20)
+### 1a. The WASM size decision (Owner: project owner — RESOLVED 2026-11-20)
 
-**Resolved, no longer a blocker.** The user has no money, so Workers
+**Resolved, no longer a blocker.** There is no budget, so Workers
 Paid ($5/mo) is permanently out; the project stays on the free tier.
 The size was closed by doing BOTH of the free levers, in order:
 `wasm-opt -Oz` first (binaryen is a project devDependency — the P5
@@ -52,24 +53,22 @@ gate with the exact byte count — do not work around the gate; the next
 lever is the same split pattern on another crate. Full record: doc §3
 "Converter split", "Social + Woo split", "School split", "SEO split".
 
-### 1b. Written user approval for the cutover (OWNER: user)
+### 1b. Project-owner sign-off for the cutover (Owner: project owner)
 
-Cutover needs the user's approval **in writing** (doc §7 Q9). P5
-prepares the evidence; it does not cut over. Approval covers: the size
+Cutover needs sign-off from the project owner (doc §7 Q9). P5
+prepares the evidence; it does not cut over. Sign-off covers: the size
 decision above, the staging soak (step 7) having passed, and the
-production cutover window. Do not deploy to production without it.
+production cutover window. Production cutover must not happen without it.
 
-### 1c. Where v2 lives (OWNER: user — doc §7 Q1, undecided)
+### 1c. Where v2 lives (Owner: project owner — doc §7 Q1, decided 2026-11-20)
 
-The v2 code is local-only in this VM; nothing v2 has been pushed to
-GitHub. Decide the repo shape before step 2 — separate repository
-(`ola1de/Wordless-CMS-v2` or similar), a `v2` branch of
-`Wordless-CMS`, or a monorepo — then clone it on the user's machine.
+The v2 code lives in the separate repository `ola1de/Wordless-CMS-v2`
+(decided 2026-11-20); clone it on the operator's machine before step 2.
 This runbook calls that directory **`C:\Users\USER\Wordless-CMS-v2`**
 and the v1 directory `C:\Users\USER\Wordless-CMS`; adjust the path if
-the decision lands elsewhere, and keep it consistent through the steps.
+your checkout is elsewhere, and keep it consistent through the steps.
 
-### 1d. Toolchain on the user's machine (OWNER: user)
+### 1d. Toolchain on the operator's machine (Owner: project owner)
 
 - **Rust 1.100.0** (pinned): install rustup, then
   `rustup toolchain install 1.100.0`, `rustup default 1.100.0`,
@@ -98,7 +97,7 @@ the decision lands elsewhere, and keep it consistent through the steps.
 
 ---
 
-## 2. Get v2 onto the user's machine and verify it locally
+## 2. Get v2 onto the operator's machine and verify it locally
 
 From Git Bash (or PowerShell with bash on PATH), in the v2 directory:
 
@@ -119,7 +118,7 @@ cargo test --workspace --lib
 ```
 
 Expected: **480 passed, 0 failed** (20 crates). Then the parity
-harness, exactly as it runs in this VM:
+harness, exactly as it runs locally:
 
 ```powershell
 bash tests/parity/run-parity.sh
@@ -135,7 +134,7 @@ node tests/parity/rollback.mjs
 
 Expected: `== P5 rollback: 15/15 checks passed ==`.
 
-If any of the three fails on the user's machine, stop — the difference
+If any of the three fails on the operator's machine, stop — the difference
 is environmental (toolchain version, line endings, ports in use) and
 must be understood before staging. Do not skip ahead to a deploy.
 
@@ -193,7 +192,7 @@ data, so these are the SAME resources as the v1 worker:
 - KV `id`: find it with `npx wrangler kv namespace list` — the
   namespace the live v1 worker uses — and paste it in.
 
-Do **not** deploy to production in this step. Filling the values in
+Do not cut over to production in this step. Filling the values in
 now only lets the deploy script's placeholder check pass later.
 
 ---
@@ -205,7 +204,7 @@ cd C:\Users\USER\Wordless-CMS-v2
 npm run deploy:staging
 ```
 
-(Workers Paid is ruled out — the user has no money — so there is no
+(Workers Paid is ruled out — no budget — so there is no
 `--paid` variant of this command.)
 
 What the script does, in order, and what to expect:
@@ -301,10 +300,10 @@ exceptions during the soak.
 
 ---
 
-## 7. Staging soak checklist (user-visible checks — the P4 open items live here)
+## 7. Staging soak checklist (checks visible in the product — the P4 open items live here)
 
 Soak for at least a day of real use on staging. Every item must be
-checked by a human, on the user's own devices:
+checked by a human, on the operator's own devices:
 
 - [ ] **§6.4 visual review** — Dashboard, editor, Plugins, community,
   commerce, school, SEO, users, public site at **1440 px, 768 px and
@@ -316,11 +315,11 @@ checked by a human, on the user's own devices:
 - [ ] **Keyboard-only walkthrough** — Tab through the editor and the
   dashboard; every control reachable, focus visible, no keyboard trap.
 - [ ] **Screenshot retake** — retake the admin screenshots on staging
-  (the P4 redesign has no verified screenshots yet — none exist from
-  this VM, and none are claimed).
+  (the P4 redesign has no verified screenshots yet — none were produced
+  during local testing, and none are claimed).
 - [ ] **Galaxy A56** (Samsung SM-A566B) — sign in, create and publish
-  a post, upload a photo, open the public site. The phone is the
-  device the admin will actually be used on.
+  a post, upload a photo, open the public site. Test on a real phone;
+  the Galaxy A56 is the reference device.
 - [ ] **Cron sweep** — schedule a post 10 minutes out; confirm it
   flips to `publish` on its own (the 5-minute `*/5 * * * *` trigger;
   the lazy-publish half was verified locally, the real sweep only
@@ -344,7 +343,7 @@ and re-soak that item. Do not cut over with open soak items.
 
 ## 8. Cutover to production
 
-Prerequisites: §1a (size) decided, §1b (written approval) given,
+Prerequisites: §1a (size) decided, §1b (project-owner sign-off) given,
 §7 (soak) fully checked, §3b (production config) filled in.
 
 ### 8a. Back up production first
@@ -378,7 +377,7 @@ https://wordless-prod.ola1de-olawande.workers.dev/api/health.
 ### 8c. Verify production (in order, immediately)
 
 1. `GET https://wordless-prod.ola1de-olawande.workers.dev/api/health` → 200.
-2. **Existing session**: in the browser where the user is already
+2. **Existing session**: in the browser where the operator is already
    signed in to the live `/admin`, refresh — the session must still
    work (no fresh login). This is the live version of rehearsal
    check A7. If it asks for a password, stop and roll back (§9) —
@@ -447,7 +446,7 @@ those tables — they are additive and harmless.
 
 ---
 
-## Appendix A — Known diffs the user will see on staging (17, classified)
+## Appendix A — Known diffs visible on staging (17, classified)
 
 These are differences the parity harness found and classified, not
 bugs. They are expected on staging too:
@@ -489,16 +488,16 @@ bugs. They are expected on staging too:
 
 ## Appendix C — What is NOT covered by this runbook
 
-- The staging deploy itself has never run (no Cloudflare access from
-  this VM); steps 4–9 are written from the v1 deploy history, the
+- The staging deploy itself has never run yet; steps 4–9 are written
+  from the v1 deploy history, the
   wrangler 4.165.0 help text, and the local rehearsals — not from an
   observed v2 deploy. The first staging run may surface environment
   differences (Windows `bash`, Rust toolchain, wrangler version).
 - R3 (PBKDF2 CPU) is open until the step-6 measurement.
 - The P4 visual items (§6.4) are open until the step-7 soak.
 - Live Workers AI calls, live payment-provider checkouts and live
-  HTTP email have never been observed (no keys, by design) — step 5
+  HTTP email have never been observed (no keys connected) — step 5
   item 8 covers Workers AI on staging; payment providers stay mock
-  until the user configures real keys.
+  until the operator configures real keys.
 - Converted plugins/themes still do not run (P6). The honest wording
   stays "converts and reports".

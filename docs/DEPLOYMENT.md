@@ -5,12 +5,13 @@ production. The deploy script (`scripts/deploy.mjs`) is the authority:
 it refuses to deploy unless every guard passes. This guide explains
 what it does and what you must set up first.
 
-> **Do not deploy to production yet.** v1.1.0 stays live until the
-> cutover gate passes: staging deploy + your walkthrough + your written
-> approval. See `docs/cutover-runbook.md` for the full cutover
-> checklist. Never deploy from the development VM — it has no
-> Cloudflare credentials by design. Deployment runs from your own
-> machine.
+> **Status: v2.0 is pre-release.** The current stable release is v1.1.0
+> (TypeScript); v2.0 (Rust) has completed all 12 build phases and is
+> pending staging validation before production cutover. Production
+> cutover requires staging validation plus sign-off from the project
+> owner — see `docs/cutover-runbook.md` for the full checklist.
+> Deployment runs from the operator's machine, using their own
+> Cloudflare login; no credentials are stored in the repository.
 
 ## Architecture in one paragraph
 
@@ -114,7 +115,7 @@ checklist is in `docs/cutover-runbook.md`.
 
 ## Cut over to production
 
-Only after staging is walked through and approved in writing:
+Only after staging is walked through and signed off by the project owner:
 
 ```sh
 npm run deploy:production
