@@ -1,0 +1,27 @@
+[package]
+name = "wordless-social-worker"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 social Worker (size remedy, 2026-11-20): the BuddyPress-like social networking module (profiles, friends, activity feed, groups, direct messaging, notifications, member directory, public member/group/activity pages) as a standalone Worker with its own 3 MiB free-tier budget. The main Worker proxies /api/social/* and the public /members, /groups, /activity pages here; this Worker owns the wl_social_* tables in the SAME shared D1 database (the main Worker still runs the migrations). Internal service — reachability is the access control; auth is enforced by the router from the session cookie, exactly like the main Worker."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-social = { path = "../wordless-social" }
+wordless-integrations = { path = "../wordless-integrations" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+
+[lints]
+workspace = true

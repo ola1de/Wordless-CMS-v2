@@ -1,0 +1,56 @@
+# WORDLESS v2.0 — WooCommerce Worker configuration (size remedy, 2026-11-20).
+#
+# The WooCommerce compatibility subset as a standalone Worker. The
+# main Worker binds it as a service (`WOO`, see the main
+# wrangler.toml); local dev reaches it over plain HTTP at
+# WORDLESS_WOO_URL (default http://127.0.0.1:8808 — see
+# scripts/dev-split.sh).
+#
+# Owns the wl_woo_* tables in the SAME shared D1 database as the
+# main Worker (same database_id below and per env) and extends the P3
+# wl_products / wl_orders / wl_order_items tables in place. The main
+# Worker runs the migrations — this Worker declares no
+# migrations_dir, so it never applies them. No R2/KV/AI bindings.
+#
+# No secrets in this file. Deploy with the main Worker (see
+# scripts/deploy.mjs): the WooCommerce Worker deploys first, then
+# the main Worker (whose service binding must name the deployed
+# worker). The payment secrets (PAYSTACK_*, FLUTTERWAVE_*,
+# STRIPE_*, MOCK_PAYMENT_WEBHOOK_SECRET) must be set on THIS Worker
+# too (`wrangler secret put`, same values as the main Worker) — the
+# Woo checkout resolves its provider and gateway here.
+
+name = "wordless-woocommerce"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (same worker-build 0.9.0
+# staging rule as the main Worker — see scripts/build-worker.sh).
+command = "bash ../../scripts/build-woo.sh"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wordless-v2"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Environments: the WooCommerce Worker deploys alongside the main
+# Worker, one per environment; the main Worker's [env.*.services]
+# binding names the matching worker here. The database_id is the SAME
+# D1 as the main Worker in that environment (production: paste the
+# same id as the main Worker's production D1).
+[env.staging]
+name = "wordless-woocommerce-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "wordless-staging"
+database_id = "REPLACE-ME"
+
+[env.production]
+name = "wordless-woocommerce-production"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "wordless-prod"
+database_id = "REPLACE-ME"

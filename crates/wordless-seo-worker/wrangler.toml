@@ -1,0 +1,59 @@
+# WORDLESS v2.0 — SEO Worker configuration (2026-11-20 SEO split).
+#
+# The SEO Engine's API + public surface as a standalone Worker. The
+# main Worker binds it as a service (`SEO`, see the main
+# wrangler.toml); local dev reaches it over plain HTTP at
+# WORDLESS_SEO_URL (default http://127.0.0.1:8812 — see
+# scripts/dev-split.sh).
+#
+# Owns the wl_* SEO tables (wl_redirects, wl_404_log,
+# wl_seo_audit_runs — migrations 0001/0007/0016) plus the per-post
+# `_wl_seo_*` postmeta in the SAME shared D1 database as the main
+# Worker (same database_id below and per env). The main Worker runs
+# the migrations — this Worker declares no migrations_dir, so it
+# never applies them. No R2/KV/AI bindings: SEO needs none. No cron
+# trigger: SEO has no sweep.
+#
+# Page-head rendering (JSON-LD in <head>, breadcrumbs,
+# canonical/meta tags) does NOT live here: it runs inside the main
+# Worker's public page templates, in-process, from
+# `wordless-seo-core`.
+#
+# No secrets in this file. Deploy with the main Worker (see
+# scripts/deploy.mjs): the SEO Worker deploys before the main
+# Worker (whose service binding must name the deployed worker).
+
+name = "wordless-seo"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (same worker-build 0.9.0
+# staging rule as the main Worker — see scripts/build-worker.sh).
+command = "bash ../../scripts/build-seo.sh"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wordless-v2"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Environments: the SEO Worker deploys alongside the main Worker,
+# one per environment; the main Worker's [env.*.services] binding
+# names the matching worker here. The database_id is the SAME D1 as
+# the main Worker in that environment (production: paste the same id
+# as the main Worker's production D1).
+[env.staging]
+name = "wordless-seo-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "wordless-staging"
+database_id = "REPLACE-ME"
+
+[env.production]
+name = "wordless-seo-production"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "wordless-prod"
+database_id = "REPLACE-ME"

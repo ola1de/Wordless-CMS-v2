@@ -1,0 +1,22 @@
+[package]
+name = "wordless-woocommerce"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 WooCommerce module (P8): the store as a compatibility subset — variable products (attributes × variations), coupons, taxes, shipping, customers, and CSV import (products/orders/customers). Never WooCommerce PHP: variable products are native Wordless products with a type, orders are the P3 wl_orders rows with Woo totals, and payment still goes through the P3 HMAC-verified webhooks. Money is integer minor units only, everywhere."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-commerce = { path = "../wordless-commerce" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

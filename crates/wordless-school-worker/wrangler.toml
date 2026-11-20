@@ -1,0 +1,63 @@
+# WORDLESS v2.0 — school Worker configuration (size remedy, 2026-11-20).
+#
+# The school portal + CBT module as a standalone Worker. The main
+# Worker binds it as a service (`SCHOOL`, see the main wrangler.toml);
+# local dev reaches it over plain HTTP at WORDLESS_SCHOOL_URL
+# (default http://127.0.0.1:8809 — see scripts/dev-split.sh).
+#
+# Owns the wl_* school tables (wl_courses, wl_lessons, wl_enrolments,
+# wl_question_banks, wl_questions, wl_exams, wl_exam_attempts,
+# wl_exam_answers, wl_results, wl_certificates — migration 0015_p9.sql)
+# in the SAME shared D1 database as the main Worker (same database_id
+# below and per env). The main Worker runs the migrations — this
+# Worker declares no migrations_dir, so it never applies them. No
+# R2/KV/AI bindings: school needs none.
+#
+# The cron sweep that closes expired exam attempts lives here too:
+# [triggers] crons below fires the #[event(scheduled)] handler in
+# src/lib.rs every 5 minutes (the main Worker's trigger keeps only
+# the scheduled-post publish sweep — it no longer links
+# wordless-school). Local `wrangler dev` fires no real cron; the
+# lazy close on attempt read is the locally verifiable half.
+#
+# No secrets in this file. Deploy with the main Worker (see
+# scripts/deploy.mjs): the school Worker deploys first, then the main
+# Worker (whose service binding must name the deployed worker).
+
+name = "wordless-school"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (same worker-build 0.9.0
+# staging rule as the main Worker — see scripts/build-worker.sh).
+command = "bash ../../scripts/build-school.sh"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wordless-v2"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Environments: the school Worker deploys alongside the main Worker,
+# one per environment; the main Worker's [env.*.services] binding
+# names the matching worker here. The database_id is the SAME D1 as
+# the main Worker in that environment (production: paste the same id
+# as the main Worker's production D1).
+[env.staging]
+name = "wordless-school-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "wordless-staging"
+database_id = "REPLACE-ME"
+
+[env.production]
+name = "wordless-school-production"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "wordless-prod"
+database_id = "REPLACE-ME"

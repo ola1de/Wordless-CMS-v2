@@ -1,0 +1,33 @@
+[package]
+name = "wordless-themes"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 themes: theme.json engine v1-v3, theme registry, ZIP import (10,000 files / 50 MB), customizer, patterns. Pure logic over wordless-db — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-multisite = { path = "../wordless-multisite" }
+# Split (2026-11-20): the conversion ENGINE lives in the
+# wordless-converter Worker; this crate reaches it through the
+# kernel's ConverterClient trait, and the job records + settings
+# migration live in wordless-conversion-jobs.
+wordless-conversion-jobs = { path = "../wordless-conversion-jobs" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+zip = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+wasm-bindgen-test = { workspace = true }
+# Test-only: the TestConverter (test_converter.rs) calls the real
+# engine in-process so theme-import tests prove the conversion
+# record without a running converter Worker. Dev-dependencies never
+# link into the release WASM.
+wordless-conversion = { path = "../wordless-conversion" }
+wordless-elementor = { path = "../wordless-elementor" }
+
+[lints]
+workspace = true

@@ -1,0 +1,29 @@
+[package]
+name = "wordless-seo-worker"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 SEO Worker (2026-11-20 SEO split): the SEO Engine's API + public surface (per-post SEO fields, analysis, robots, JSON-LD preview, FAQ, CWV budgets, audit runs, sitemap viewer, templates, calendar, import, redirects CRUD, 404 log, sitemaps, robots.txt, llms.txt) as a standalone Worker with its own 3 MiB free-tier budget. The main Worker proxies the SEO routes here; this Worker owns the wl_* SEO tables in the SAME shared D1 database (the main Worker still runs the migrations). Page-head rendering stays in the main Worker via wordless-seo-core. Internal service — reachability is the access control; auth is enforced by the router from the session cookie, exactly like the main Worker."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-cms = { path = "../wordless-cms" }
+wordless-seo = { path = "../wordless-seo" }
+wordless-seo-core = { path = "../wordless-seo-core" }
+wordless-multisite = { path = "../wordless-multisite" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+
+[lints]
+workspace = true

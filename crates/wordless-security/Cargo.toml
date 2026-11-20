@@ -1,0 +1,23 @@
+[package]
+name = "wordless-security"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 Security Centre (P3): one consolidated overview — audit log, lockout state, TOTP status, active sessions, security headers. Aggregation only: lockout and TOTP live in wordless-auth, the audit log in wordless-cms, the header values in wordless-kernel. Port of the v1 admin security overview (src/modules/security/service.ts getSecurityOverview) plus the P3 consolidation (doc §0.2 module #11, §3 P3)."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-cms = { path = "../wordless-cms" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,53 @@
+# WORDLESS v2.0 — social Worker configuration (size remedy, 2026-11-20).
+#
+# The BuddyPress-like social networking module as a standalone Worker.
+# The main Worker binds it as a service (`SOCIAL`, see the main
+# wrangler.toml); local dev reaches it over plain HTTP at
+# WORDLESS_SOCIAL_URL (default http://127.0.0.1:8807 — see
+# scripts/dev-split.sh).
+#
+# Owns the wl_social_* tables in the SAME shared D1 database as the
+# main Worker (same database_id below and per env). The main Worker
+# runs the migrations — this Worker declares no migrations_dir, so it
+# never applies them. No R2/KV/AI bindings: social needs none
+# (notification mail goes out over plain HTTP via the integrations
+# mailer, same as before the split).
+#
+# No secrets in this file. Deploy with the main Worker (see
+# scripts/deploy.mjs): the social Worker deploys first, then the main
+# Worker (whose service binding must name the deployed worker).
+
+name = "wordless-social"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (same worker-build 0.9.0
+# staging rule as the main Worker — see scripts/build-worker.sh).
+command = "bash ../../scripts/build-social.sh"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wordless-v2"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Environments: the social Worker deploys alongside the main Worker,
+# one per environment; the main Worker's [env.*.services] binding
+# names the matching worker here. The database_id is the SAME D1 as
+# the main Worker in that environment (production: paste the same id
+# as the main Worker's production D1).
+[env.staging]
+name = "wordless-social-staging"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "wordless-staging"
+database_id = "REPLACE-ME"
+
+[env.production]
+name = "wordless-social-production"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "wordless-prod"
+database_id = "REPLACE-ME"

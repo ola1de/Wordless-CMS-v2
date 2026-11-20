@@ -1,0 +1,21 @@
+[package]
+name = "wordless-media"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 media: R2 uploads (50 MB cap, MIME allowlist, magic-byte sniffing), listing, file manager operations, image derivatives when the Images binding is present, video/document optimisation. Pure service logic over wordless-db + the kernel ObjectStore trait — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-multisite = { path = "../wordless-multisite" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,34 @@
+[package]
+name = "wordless-render"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 public rendering: Gutenberg block-comment HTML rendering, template hierarchy, public pages, feeds (RSS). Pure logic over wordless-db — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-multisite = { path = "../wordless-multisite" }
+wordless-themes = { path = "../wordless-themes" }
+# P3: shop pages (commerce money/types), and share links
+# (integrations social). The Elementor renderer left with the
+# 2026-11-20 split (it runs in the wordless-converter Worker); this
+# crate reaches it through the kernel's ConverterClient trait, passed
+# in via RenderOptions.
+wordless-commerce = { path = "../wordless-commerce" }
+wordless-integrations = { path = "../wordless-integrations" }
+# Size remedy (2026-11-20): the WooCommerce types left with the
+# split — the storefront reads Woo data through the kernel's
+# WooClient trait, passed in via RenderOptions (same pattern as the
+# converter client).
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

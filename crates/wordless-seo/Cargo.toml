@@ -1,0 +1,25 @@
+[package]
+name = "wordless-seo"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 SEO: per-post SEO fields, head rendering (title/meta/canonical/robots/OG/Twitter/JSON-LD), deterministic SEO analysis, sitemap + robots.txt, redirect manager + 404 log. Pure logic over wordless-db — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-seo-core = { path = "../wordless-seo-core" }
+wordless-db = { path = "../wordless-db" }
+wordless-cms = { path = "../wordless-cms" }
+wordless-multisite = { path = "../wordless-multisite" }
+wordless-media = { path = "../wordless-media" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

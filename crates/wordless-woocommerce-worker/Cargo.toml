@@ -1,0 +1,28 @@
+[package]
+name = "wordless-woocommerce-worker"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 WooCommerce Worker (size remedy, 2026-11-20): the WooCommerce compatibility subset (variable products, coupons, taxes, shipping, customers, CSV import, Woo checkout) as a standalone Worker with its own 3 MiB free-tier budget. The main Worker proxies /api/woo/* here and calls the internal /__woo/* endpoints for the storefront (variation resolution, product detail, shipping zones, totals, shop checkout). This Worker owns the wl_woo_* tables in the SAME shared D1 database (the main Worker still runs the migrations) and extends the P3 wl_products / wl_orders / wl_order_items tables in place. Internal service — reachability is the access control; auth is enforced by the router from the session cookie, exactly like the main Worker."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-commerce = { path = "../wordless-commerce" }
+wordless-woocommerce = { path = "../wordless-woocommerce" }
+wordless-gateways = { path = "../wordless-gateways" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+
+[lints]
+workspace = true

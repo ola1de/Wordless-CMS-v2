@@ -1,0 +1,22 @@
+[package]
+name = "wordless-school"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 School portal + CBT (P9): courses, enrolment, question bank, timed exams with server-side timing, auto-grading, results, leaderboard, certificates. No live proctoring — the honest controls are server-side timing, question shuffling, attempt limits, exam windows, and enrolment-only access. Short-answer questions are manual-graded only, never auto-graded. Certificates are server-rendered HTML pages with a print stylesheet (Q13 decided 2026-11-20), not PDFs."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+sha2 = "0.10"
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true
