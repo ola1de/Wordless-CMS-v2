@@ -1,0 +1,8 @@
+[package]
+name = "wordless-compat"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 WordPress compatibility registry (P3): the wp_* function registry with honest support levels, plus the wl_* Wordless API surfaces, esc_html/esc_attr and wptexturize. Pure static data and string logic — no dependencies, cargo-testable on native targets."
+
+[lints]
+workspace = true

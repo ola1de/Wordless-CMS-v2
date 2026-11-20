@@ -1,0 +1,12 @@
+[package]
+name = "wordless-elementor"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 Elementor content renderer (P3): renders _elementor_data JSON (sections → columns → widgets) as plain HTML — content only, no editor. Pure logic, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

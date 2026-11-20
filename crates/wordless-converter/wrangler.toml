@@ -1,0 +1,33 @@
+# WORDLESS v2.0 — converter Worker configuration (split, 2026-11-20).
+#
+# The PHP → TypeScript conversion engine as a standalone Worker. The
+# main Worker binds it as a service (`CONVERTER`, see the main
+# wrangler.toml); local dev reaches it over plain HTTP at
+# WORDLESS_CONVERTER_URL (default http://127.0.0.1:8805 — see
+# scripts/dev-split.sh).
+#
+# Pure compute: NO D1/R2/KV/AI bindings. Converted output and reports
+# are stored by the main Worker, which owns all persistence — that is
+# why the converter needs no bindings of its own.
+#
+# No secrets in this file. Deploy with the main Worker (see
+# scripts/deploy.mjs): the converter deploys first, then the main
+# Worker (whose service binding must name the deployed converter).
+
+name = "wordless-converter"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-11-19"
+
+[build]
+# The build MUST run from the crate directory (same worker-build 0.9.0
+# staging rule as the main Worker — see scripts/build-worker.sh).
+command = "bash ../../scripts/build-converter.sh"
+
+# Environments: the converter deploys alongside the main Worker, one
+# per environment; the main Worker's [env.*.services] binding names
+# the matching worker here.
+[env.staging]
+name = "wordless-converter-staging"
+
+[env.production]
+name = "wordless-converter-production"

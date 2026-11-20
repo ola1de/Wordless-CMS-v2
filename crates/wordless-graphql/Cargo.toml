@@ -1,0 +1,25 @@
+[package]
+name = "wordless-graphql"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 GraphQL (P3, NEW — no v1 equivalent): a query endpoint over the same content model as REST (posts, terms, media, users, options), authenticated the same way, with the same capability guards. Queries only; hand-rolled parser (no GraphQL dependency — WASM size)."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-cms = { path = "../wordless-cms" }
+wordless-multisite = { path = "../wordless-multisite" }
+wordless-media = { path = "../wordless-media" }
+wordless-auth = { path = "../wordless-auth" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,24 @@
+[package]
+name = "wordless-integrations"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 integrations (P3): integration registry with secret-rejecting config, email (mock log + generic HTTP provider), analytics/social/Cloudflare status, marketplace ZIP install over R2, and compatibility reports. Port of v1 src/modules/integrations/. Pure logic over wordless-db — no Worker types except the small platform HTTP client, cargo-testable on native targets. Installed code is NEVER executed."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+zip = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

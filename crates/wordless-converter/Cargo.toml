@@ -1,0 +1,23 @@
+[package]
+name = "wordless-converter"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 converter Worker (split, 2026-11-20): the PHP → TypeScript conversion engine (wordless-conversion) + Elementor content renderer (wordless-elementor) as a standalone stateless Worker with its own 3 MiB free-tier budget. The main Worker reaches it as a service binding (production) or over plain HTTP at WORDLESS_CONVERTER_URL (local dev). Pure compute: no D1/R2/KV bindings — converted output and reports are stored by the main Worker, which owns all persistence."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-conversion = { path = "../wordless-conversion" }
+wordless-elementor = { path = "../wordless-elementor" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+
+[lints]
+workspace = true

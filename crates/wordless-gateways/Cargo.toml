@@ -1,0 +1,24 @@
+[package]
+name = "wordless-gateways"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 Worker-side HTTP implementations (split, 2026-11-20): outbound webhook POSTs and real payment checkouts (Paystack / Flutterwave / Stripe) via worker::Fetch, plus the extension fetch transport. Moved out of the wordless-worker crate so the wordless-woocommerce-worker can resolve payment gateways too; the service crates stay platform-neutral. Real providers are implemented from their public API docs and have NEVER been verified live (no keys connected, by design)."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-commerce = { path = "../wordless-commerce" }
+wordless-extensions = { path = "../wordless-extensions" }
+wordless-webhooks = { path = "../wordless-webhooks" }
+wordless-importer = { path = "../wordless-importer" }
+js-sys = { workspace = true }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+serde_json = { workspace = true }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+
+[lints]
+workspace = true

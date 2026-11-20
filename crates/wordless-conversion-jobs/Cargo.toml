@@ -1,0 +1,19 @@
+[package]
+name = "wordless-conversion-jobs"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 conversion job records (split, 2026-11-20): the wl_jobs rows for PHP → TypeScript conversion (enqueue, status, report) plus the wp_options settings migration. The conversion ENGINE (lexer/parser/emitter/analyser) lives in the wordless-converter Worker and is reached through the kernel's ConverterClient trait — this crate never links it, which is the whole point of the split. Pure DB logic — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+async-trait = { workspace = true }
+
+[lints]
+workspace = true

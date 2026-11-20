@@ -1,0 +1,32 @@
+[package]
+name = "wordless-extensions"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 P6: sandboxed extension runtime — capability-checked host API, loader with a conversion-report load gate, extension Worker script generation, dispatch/service-binding executor, hook dispatch, run/log records. Converted TypeScript extensions run as their own Workers (Workers for Platforms dispatch namespaces in production, service bindings locally); the main Worker never executes extension code in its own isolate."
+license = "MIT"
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+hmac = { workspace = true }
+futures-util = { workspace = true }
+
+# wasm32 only: the Fetcher transport (service bindings / dispatch
+# namespaces) and the Delay-based invoke timeout live in the Worker.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+js-sys = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

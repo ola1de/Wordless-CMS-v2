@@ -1,0 +1,21 @@
+[package]
+name = "wordless-conversion"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 P3: PHP lexer/parser/AST (from the P0 prototype), TypeScript emitter, safety scan, analyser, auto-convert and conversion jobs over wl_jobs. Pure logic — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true
