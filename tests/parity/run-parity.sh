@@ -69,6 +69,16 @@ echo "== P5 parity: clean room =="
 rm -rf "$ROOT/.wrangler" "$WORK" "$RESULTS"
 mkdir -p "$WORK" "$FIX" "$RESULTS"
 
+# The main Worker's wrangler.toml serves the React admin from admin/dist
+# ([assets] directory). admin/dist is gitignored build output, so a fresh
+# clone does not have it and `wrangler dev` for v2 fails hard with
+# "assets.directory ... does not exist". Build it once if it is missing;
+# repeat runs reuse it.
+if [ ! -d "$ROOT/admin/dist" ]; then
+  echo "== P5 parity: admin SPA missing — building admin/dist =="
+  bash "$ROOT/scripts/build-admin.sh"
+fi
+
 echo "== P5 parity: v1 scratch copy (TS repo untouched) =="
 mkdir -p "$WORK/v1"
 # tar copy (excludes node_modules/.wrangler; non-root tar does not try to

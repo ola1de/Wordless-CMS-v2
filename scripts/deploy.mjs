@@ -164,10 +164,17 @@ async function main() {
 
   log(`  Deploying v2.0.0 to environment: ${env}${paid ? " (Workers Paid, 10 MB limit)" : " (free tier, 3 MB limit per Worker)"}`);
 
-  log("\n  0. Pre-deploy checks (cargo tests + all five WASM builds + size gates)");
+  log("\n  0. Pre-deploy checks (cargo tests + admin SPA + all six WASM builds + size gates)");
   let r = run("cargo", ["test", "--workspace", "--lib"], { stdio: "inherit" });
   if (!r.ok) fail("`cargo test --workspace --lib` failed. Fix the failing tests before deploying.");
   ok("Cargo tests pass");
+  // The main Worker's wrangler.toml serves the React admin from admin/dist
+  // ([assets] directory). admin/dist is gitignored build output, so a fresh
+  // clone does not have it and the deploy fails with "assets.directory ...
+  // does not exist". Build it here so deploys work from a fresh clone.
+  r = run("bash", ["scripts/build-admin.sh"], { stdio: "inherit" });
+  if (!r.ok) fail("`bash scripts/build-admin.sh` failed (on Windows: run from Git Bash, or add it to PATH). Fix the build errors and retry.");
+  ok("Admin SPA build passed");
   r = run("bash", ["scripts/build-worker.sh"], { stdio: "inherit" });
   if (!r.ok) fail("`bash scripts/build-worker.sh` failed (on Windows: run from Git Bash, or add it to PATH). Fix the build errors and retry.");
   ok("Main WASM build passed");
