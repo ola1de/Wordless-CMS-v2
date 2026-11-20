@@ -1,0 +1,26 @@
+[package]
+name = "wordless-cms"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 core CMS: posts, revisions, terms, comments, menus, search, permalinks, options, settings, activity, custom post types and taxonomies. Pure service logic over the wordless-db trait — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-multisite = { path = "../wordless-multisite" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+# NFD decomposition for slugify (v1 uses String.normalize("NFD")).
+unicode-normalization = "0.1"
+
+[dev-dependencies]
+futures-executor = "0.3"
+wasm-bindgen-test = { workspace = true }
+# Real SQLite for service tests (in-memory, migrations 0001+0002 applied).
+# Test-only: never linked into the Worker binary.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[lints]
+workspace = true

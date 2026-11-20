@@ -1,0 +1,22 @@
+[package]
+name = "wordless-builder"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 Visual Builder (P11): palette data (the full admin element + icon libraries, never a subset), layout validation for Elementor-compatible JSON, and the extension-widget registry (widgets appear in the palette only when their extension is installed and loaded). Pure logic over wordless-db — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+wordless-elementor = { path = "../wordless-elementor" }
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

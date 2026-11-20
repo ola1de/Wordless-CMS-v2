@@ -1,0 +1,24 @@
+[package]
+name = "wordless-auth"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 auth: PBKDF2 passwords (byte-identical v1 format), opaque D1 sessions, users, roles, login. Pure logic over the wordless-db trait — no Worker types, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+hmac = { workspace = true }
+sha1 = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+wasm-bindgen-test = { workspace = true }
+# Real SQLite for service tests (in-memory, migrations 0001+0002+0009).
+# Test-only: never linked into the Worker binary.
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+[lints]
+workspace = true

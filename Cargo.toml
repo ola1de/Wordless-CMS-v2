@@ -1,0 +1,115 @@
+# WORDLESS v2.0 — Rust backend (Phase P1: Worker skeleton).
+# Cargo workspace. See docs/04-rust-v2-architecture.md §2.1.
+# Pinned versions are recorded in README.md (doc §7 Q2).
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/wordless-kernel",
+    "crates/wordless-db",
+    "crates/wordless-auth",
+    "crates/wordless-cms",
+    "crates/wordless-media",
+    "crates/wordless-themes",
+    "crates/wordless-render",
+    "crates/wordless-seo",
+    "crates/wordless-worker",
+    # P3 crates (skeletons created by the P3 coordinator so `cargo test -p`
+    # works for the parallel crate builders; each builder fills in its own).
+    "crates/wordless-conversion",
+    "crates/wordless-elementor",
+    "crates/wordless-compat",
+    "crates/wordless-ai",
+    "crates/wordless-commerce",
+    "crates/wordless-integrations",
+    "crates/wordless-security",
+    "crates/wordless-importer",
+    "crates/wordless-backup",
+    "crates/wordless-graphql",
+    "crates/wordless-webhooks",
+    "crates/wordless-extensions",
+    "crates/wordless-social",
+    # P8: WooCommerce compatibility subset.
+    "crates/wordless-woocommerce",
+    # P9: School portal + CBT (courses, enrolment, question bank,
+    # timed exams, auto-grading, results, certificates).
+    "crates/wordless-school",
+    # Converter split (2026-11-20): the conversion job records stay in
+    # the main Worker; the engine runs in its own Worker.
+    "crates/wordless-conversion-jobs",
+    "crates/wordless-converter",
+    # Size remedy (2026-11-20): social + WooCommerce move to their own
+    # Workers; the payment gateways move to a shared crate so both the
+    # main Worker and the WooCommerce Worker can resolve them.
+    "crates/wordless-gateways",
+    "crates/wordless-social-worker",
+    "crates/wordless-woocommerce-worker",
+    # Size remedy (2026-11-20): school portal + CBT moves to its own
+    # Worker (P9 grew the main Worker to 98.9% of the free-tier limit).
+    "crates/wordless-school-worker",
+    # SEO split (2026-11-20): the render primitives (head / JSON-LD /
+    # per-post SEO fields / site URL / 404 logging) stay linked by the
+    # main Worker as a shared crate; the API surface runs in its own
+    # Worker (below).
+    "crates/wordless-seo-core",
+    "crates/wordless-seo-worker",
+    # P11: Visual Builder — palette, layout validation, extension
+    # widget registry (main Worker only; rendering stays in the
+    # converter Worker via wordless-elementor).
+    "crates/wordless-builder",
+    # P12: Multisite — site registry, resolution, per-site options
+    # (main Worker; sub-worker tables stay network-wide in P12).
+    "crates/wordless-multisite",
+]
+
+[workspace.dependencies]
+# P1 toolchain note (2026-11-19): the doc §2 pinned `worker = "0.5"`, but
+# worker-build 0.9.0 (the installed builder) requires `worker >= 0.9.0`,
+# and the 0.5-era builder (worker-build 0.1.14) hardcodes a wasm-bindgen
+# CLI 0.2.105 that is incompatible with this workspace's wasm-bindgen
+# 0.2.130 (js-sys/web-sys 0.3.107 pin it exactly). The workspace therefore
+# uses `worker = "0.9"` + worker-build 0.9.0. worker 0.9.0 was released
+# 2026-11-11; its pinned wasm-bindgen CLI is 0.2.130, exactly the
+# workspace version. Build with `--no-opt` in this VM: wasm-opt's
+# binaryen download is blocked here (same TLS failure as P0).
+worker = { version = "0.9", features = ["d1"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+wasm-bindgen-test = "0.3"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["Crypto", "SubtleCrypto", "CryptoKey", "console"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-wasm-bindgen = "0.6"
+thiserror = "2"
+async-trait = "0.1"
+futures-util = "0.3"
+sha2 = "0.10"
+hmac = "0.12"
+pbkdf2 = "0.12"
+sha1 = "0.10"
+# P2 fix (measured by the themes builder): zip's default features pull
+# C crates (bzip2-sys, lzma-sys, zstd-sys) whose build scripts need
+# clang to target wasm32 — not installed in this VM. Deflate-only
+# covers real-world theme ZIPs (deflate + stored entries).
+zip = { version = "2", default-features = false, features = ["deflate"] }
+base64 = "0.22"
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+# Size-tuned 2026-11-19 (P3): the P2 binary was 2,662,192 bytes at
+# opt-level 3; P3 wiring pushed it to 5,017,385. `strip = true` brought
+# it to 4,319,346 and `opt-level = "z"` to 3,179,188 — 33,460 bytes
+# (1.1%) over the 3 MiB free-tier script limit. wasm-opt -Oz (binaryen
+# cannot be downloaded in this VM) is the remaining lever and is
+# expected to close that gap; until it is measured, the binary is OVER
+# the free-tier limit — do not claim otherwise.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+# `panic = "abort"` was tried 2026-11-19 and made the binary slightly
+# LARGER (3,182,736 vs 3,179,188 bytes) — do not re-add it blindly.

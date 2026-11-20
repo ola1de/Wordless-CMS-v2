@@ -1,0 +1,25 @@
+[package]
+name = "wordless-backup"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 backup + restore (P3): checksummed JSON bundle + media manifest as one ZIP in R2 (zip crate, deflate-only), retention 10, verify-before-restore, typed RESTORE confirmation. Port of src/modules/backup/service.ts in the v1.1.0 TypeScript repo."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-cms = { path = "../wordless-cms" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+zip = { workspace = true }
+getrandom = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

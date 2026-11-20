@@ -1,0 +1,36 @@
+[package]
+name = "wordless-ai"
+version = "0.1.0"
+edition = "2021"
+description = "WORDLESS v2 AI operating system (P3): provider abstraction (Workers AI default via the worker::Ai binding, OpenAI-compatible fetch fallback, deterministic mock), orchestrator with manual/supervised/autonomous modes, 15 agents, approvals in wl_ai_approvals, website memory in wl_ai_memory. Pure service logic over wordless-db — no Worker types outside the small wasm32-only platform module, cargo-testable on native targets."
+
+[dependencies]
+wordless-kernel = { path = "../wordless-kernel" }
+wordless-db = { path = "../wordless-db" }
+wordless-cms = { path = "../wordless-cms" }
+wordless-multisite = { path = "../wordless-multisite" }
+wordless-media = { path = "../wordless-media" }
+wordless-seo = { path = "../wordless-seo" }
+wordless-auth = { path = "../wordless-auth" }
+wordless-themes = { path = "../wordless-themes" }
+wordless-commerce = { path = "../wordless-commerce" }
+wordless-backup = { path = "../wordless-backup" }
+# Split (2026-11-20): the conversion engine lives in the
+# wordless-converter Worker; this crate only reads the job records.
+wordless-conversion-jobs = { path = "../wordless-conversion-jobs" }
+wordless-security = { path = "../wordless-security" }
+wordless-integrations = { path = "../wordless-integrations" }
+worker = { workspace = true }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures-executor = "0.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
+wasm-bindgen-test = { workspace = true }
+
+[lints]
+workspace = true

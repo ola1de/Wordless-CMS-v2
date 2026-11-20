@@ -1,0 +1,23 @@
+# WORDLESS v2.0 — Rust workspace.
+# Repo: ola1de/Wordless-CMS-v2 (decided 2026-11-20). The ignore list
+# below keeps local build artefacts out of any snapshot.
+
+# Rust build artefacts.
+/target/
+crates/*/build/
+*.wasm
+
+# Node.
+node_modules/
+admin/node_modules/
+admin/dist/
+
+# Parity harness scratch copies + run logs (recreated by run-parity.sh).
+tests/parity/work/
+tests/parity/work-rollback/
+tests/parity/*.log
+
+# Editor / OS noise.
+.DS_Store
+*.orig
+*.rej
