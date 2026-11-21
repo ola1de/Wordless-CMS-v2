@@ -42,7 +42,7 @@ name = "wordless-social-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "wordless-staging"
-database_id = "REPLACE-ME"
+database_id = "66e2b750-693a-4310-b389-3d14ffd81e2a"
 
 [env.production]
 name = "wordless-social-production"

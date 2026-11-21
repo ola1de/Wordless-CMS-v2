@@ -9,6 +9,16 @@ set -euo pipefail
 # relative to the caller's cwd; after cd it no longer resolves).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/../crates/wordless-converter"
+# CI / clean checkout: worker-build 0.9.0 is a required toolchain step
+# (docs/cutover-runbook.md prerequisites, docs/DEPLOYMENT.md), but the
+# workflow installs Rust and wasm-pack only — not worker-build. Install
+# it once if it is missing (cargo install puts it in ~/.cargo/bin).
+# Machines that already have it (user's Windows box, this VM) skip this.
+if ! command -v worker-build >/dev/null 2>&1; then
+  echo "worker-build not found; installing worker-build 0.9.0 (one-time)..."
+  cargo install worker-build --version 0.9.0
+  export PATH="$HOME/.cargo/bin:$PATH"
+fi
 
 # Toolchain: worker 0.9.0 + worker-build 0.9.0 (see Cargo.toml note).
 # VM-only workarounds (2026-11-19): this VM cannot download from GitHub

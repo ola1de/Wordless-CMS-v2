@@ -574,7 +574,7 @@ mod tests {
 
     fn hello_dolly_code() -> String {
         std::fs::read_to_string(
-            "/home/hatch/workspace/wordless/wordless-cms/examples/hello-dolly/index.ts",
+            format!("{}/../../tests/fixtures/wordless/hello-dolly-index.ts", env!("CARGO_MANIFEST_DIR")),
         )
         .unwrap_or_else(|_| {
             "import type { WordPressApi } from \"../../src/compat/wordpress\";\nexport const renderedOutput: string[] = [];\nexport function activate(wp: WordPressApi): void {}\n".to_string()

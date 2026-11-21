@@ -449,7 +449,7 @@ mod tests {
             path: "hello.php".to_string(),
             generated_path: "extensions/hello-dolly/converted/hello.ts".to_string(),
             code: std::fs::read_to_string(
-                "/home/hatch/workspace/wordless/wordless-cms/examples/hello-dolly/index.ts",
+                format!("{}/../../tests/fixtures/wordless/hello-dolly-index.ts", env!("CARGO_MANIFEST_DIR")),
             )
             .unwrap_or_else(|_| {
                 "export function activate(wp: WordPressApi): void {\n  wp.add_action(\"admin_notices\", () => {});\n}\n".to_string()

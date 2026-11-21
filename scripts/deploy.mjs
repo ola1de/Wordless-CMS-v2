@@ -242,8 +242,12 @@ async function main() {
   ok(`converter wrangler.toml has a clean [env.${env}] section`);
   for (const [label, tomlPath] of [["social", `${ROOT}/crates/wordless-social-worker/wrangler.toml`], ["woo", `${ROOT}/crates/wordless-woocommerce-worker/wrangler.toml`], ["school", `${ROOT}/crates/wordless-school-worker/wrangler.toml`], ["seo", `${ROOT}/crates/wordless-seo-worker/wrangler.toml`]]) {
     const subToml = readFileSync(tomlPath, "utf8");
-    if (!subToml.includes(`[env.${env}]`) || subToml.includes("REPLACE-ME")) {
-      fail(`${tomlPath} has no clean [env.${env}] section. Fill in the ${label} Worker's service name for ${env} first.`);
+    // Scope the check to this env's block (same as the main wrangler.toml
+    // check above): the OTHER env's placeholders — e.g. production's
+    // REPLACE-ME while deploying staging — must not fail this deploy.
+    const subEnvBlock = subToml.split(`[env.${env}]`)[1]?.split("\n[env.")[0] ?? "";
+    if (!subEnvBlock || subEnvBlock.includes("REPLACE-ME") || subEnvBlock.includes(PLACEHOLDER_ID)) {
+      fail(`${tomlPath} has no clean [env.${env}] section. Fill in the ${label} Worker's database_id for ${env} first.`);
     }
     ok(`${label} wrangler.toml has a clean [env.${env}] section`);
   }

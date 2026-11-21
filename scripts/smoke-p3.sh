@@ -605,7 +605,7 @@ check_contains "security overview has lockout state" "$TMP/sec.json" '"lockout"'
 
 # --- import: WXR + SQL fixtures (same counts as v1) ---
 curl -sS -o "$TMP/wxr.json" -w "%{http_code}" -H "Cookie: $COOKIE" -X POST "$BASE/api/import/wxr" \
-  -F "file=@$HOME/workspace/wordless/wordless-cms/test/fixtures/wordpress/wordpress-export.xml;filename=wordpress-export.xml;type=text/xml" > "$TMP/wxr.code"
+  -F "file=@$ROOT/crates/wordless-importer/test-fixtures/wordpress-export.xml;filename=wordpress-export.xml;type=text/xml" > "$TMP/wxr.code"
 check "POST /api/import/wxr" 201 "$(cat "$TMP/wxr.code")"
 check_contains "wxr import finished done" "$TMP/wxr.json" '"status":"done"'
 check_contains "wxr import users 2" "$TMP/wxr.json" '"user":{"failed":0,"imported":2'
@@ -613,7 +613,7 @@ check_contains "wxr import posts 3 (byType)" "$TMP/wxr.json" '"post":{"failed":0
 check_contains "wxr import page 11 imported" "$TMP/wxr.json" '"sourceId":"page:11","status":"imported"' 
 WXR_JOB="$(jget "$TMP/wxr.json" 'd.data.id')"
 curl -sS -o "$TMP/sql.json" -w "%{http_code}" -H "Cookie: $COOKIE" -X POST "$BASE/api/import/sql" \
-  -F "file=@$HOME/workspace/wordless/wordless-cms/test/fixtures/wordpress/wordpress-dump.sql;filename=wordpress-dump.sql;type=text/plain" > "$TMP/sql.code"
+  -F "file=@$ROOT/crates/wordless-importer/test-fixtures/wordpress-dump.sql;filename=wordpress-dump.sql;type=text/plain" > "$TMP/sql.code"
 check "POST /api/import/sql" 201 "$(cat "$TMP/sql.code")"
 check_contains "sql import finished done" "$TMP/sql.json" '"status":"done"'
 curl -sS -o "$TMP/imp-job.json" -w "%{http_code}" -H "Cookie: $COOKIE" "$BASE/api/import/jobs/$WXR_JOB" > "$TMP/imp-job.code"

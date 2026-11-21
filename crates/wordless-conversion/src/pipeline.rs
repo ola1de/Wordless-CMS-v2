@@ -335,13 +335,41 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    /// In-repo vendored fixtures (CI / clean checkout): `tests/fixtures/`
+    /// at the workspace root. Maps the legacy local paths (a sibling
+    /// WordPress copy / v1 repo under ~/workspace/wordless) to the
+    /// vendored copies, so these tests actually run in CI instead of
+    /// silently returning early when the files are absent.
+    fn vendored_path(rel: &str) -> Option<PathBuf> {
+        let name = if rel.ends_with("wp-content/plugins/hello.php") {
+            "wordpress/hello.php"
+        } else if rel.ends_with("twentytwentyfive/functions.php") {
+            "wordpress/twentytwentyfive/functions.php"
+        } else if rel.ends_with("examples/hello-dolly/index.ts") {
+            "wordless/hello-dolly-index.ts"
+        } else if rel.ends_with("wp-content/themes/twentytwentyfive") {
+            "wordpress/twentytwentyfive"
+        } else {
+            return None;
+        };
+        Some(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tests/fixtures")
+                .join(name),
+        )
+    }
+
     /// Candidate locations for the reference WordPress copy / v1 repo,
     /// relative to the crate dir first (cargo test runs with cwd at the
-    /// package root), then absolute from $HOME.
+    /// package root), then absolute from $HOME, then the vendored
+    /// in-repo fixtures under tests/fixtures/ (CI / clean checkout).
     fn candidate_paths(rel: &str) -> Vec<PathBuf> {
         let mut out = vec![PathBuf::from(rel)];
         if let Ok(home) = std::env::var("HOME") {
             out.push(PathBuf::from(home).join("workspace/wordless").join(rel));
+        }
+        if let Some(v) = vendored_path(rel) {
+            out.push(v);
         }
         out
     }

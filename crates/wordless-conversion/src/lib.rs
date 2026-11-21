@@ -338,10 +338,37 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
+    /// In-repo vendored fixtures (CI / clean checkout): `tests/fixtures/`
+    /// at the workspace root. Maps the legacy local paths (a sibling
+    /// WordPress copy / v1 repo under ~/workspace/wordless) to the
+    /// vendored copies, so these tests actually run in CI instead of
+    /// silently returning early when the files are absent.
+    fn vendored_path(rel: &str) -> Option<PathBuf> {
+        let name = if rel.ends_with("wp-content/plugins/hello.php") {
+            "wordpress/hello.php"
+        } else if rel.ends_with("twentytwentyfive/functions.php") {
+            "wordpress/twentytwentyfive/functions.php"
+        } else if rel.ends_with("examples/hello-dolly/index.ts") {
+            "wordless/hello-dolly-index.ts"
+        } else if rel.ends_with("wp-content/themes/twentytwentyfive") {
+            "wordpress/twentytwentyfive"
+        } else {
+            return None;
+        };
+        Some(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tests/fixtures")
+                .join(name),
+        )
+    }
+
     fn find_file(rel: &str) -> Option<PathBuf> {
         let mut candidates = vec![PathBuf::from(rel)];
         if let Ok(home) = std::env::var("HOME") {
             candidates.push(PathBuf::from(home).join("workspace/wordless").join(rel));
+        }
+        if let Some(v) = vendored_path(rel) {
+            candidates.push(v);
         }
         candidates.into_iter().find(|p| p.is_file())
     }
@@ -350,6 +377,9 @@ mod tests {
         let mut candidates = vec![PathBuf::from(rel)];
         if let Ok(home) = std::env::var("HOME") {
             candidates.push(PathBuf::from(home).join("workspace/wordless").join(rel));
+        }
+        if let Some(v) = vendored_path(rel) {
+            candidates.push(v);
         }
         candidates.into_iter().find(|p| p.is_dir())
     }
