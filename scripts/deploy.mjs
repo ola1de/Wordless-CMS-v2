@@ -74,6 +74,35 @@ function ok(msg) {
 function log(msg = "") {
   console.log(msg);
 }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** GET a health URL, retrying while the new version propagates to the
+ * edge. `wrangler deploy` returns as soon as the upload succeeds, but
+ * the new version can take seconds to go live on workers.dev — a
+ * single immediate fetch 404s on a fresh deploy (staging run #4,
+ * 2026-11-21: GET /api/health returned 404 once, then served 200
+ * seconds later with no code change; all six health endpoints were
+ * verified live afterwards). Retries every 5s for ~90s, then fails
+ * with the caller's message. `label` is the short name used in the
+ * log lines ("Main", "Converter", "social", ...). */
+const HEALTH_ATTEMPTS = 18;
+const HEALTH_DELAY_MS = 5000;
+async function checkHealth(url, label, failMsg) {
+  for (let i = 1; i <= HEALTH_ATTEMPTS; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        ok(`${label} health check passed: GET ${url} returned 200${i > 1 ? ` (attempt ${i}/${HEALTH_ATTEMPTS})` : ""}`);
+        return;
+      }
+      log(`  … ${label} health check returned ${res.status} (attempt ${i}/${HEALTH_ATTEMPTS}); retrying…`);
+    } catch (e) {
+      log(`  … ${label} health check unreachable (${e.message}) (attempt ${i}/${HEALTH_ATTEMPTS}); retrying…`);
+    }
+    if (i < HEALTH_ATTEMPTS) await sleep(HEALTH_DELAY_MS);
+  }
+  fail(`${label} health check failed: ${failMsg}`);
+}
 
 /** Quote one argument for a Windows shell command line (MSVC rules). */
 function quoteArg(arg) {
@@ -333,35 +362,22 @@ async function main() {
   ok(`Main deployed to ${url}`);
 
   log("\n  7. Verify");
-  try {
-    const res = await fetch(`${url}/api/health`);
-    if (!res.ok) fail(`Health check failed: GET ${url}/api/health returned ${res.status}. The deploy may be broken — check the dashboard and roll back if needed.`);
-    ok(`Health check passed: GET ${url}/api/health returned 200`);
-  } catch (e) {
-    fail(`Health check failed: could not reach ${url}/api/health (${e.message}).`);
-  }
-  try {
-    const res = await fetch(`${converterUrl}/__convert/health`);
-    if (!res.ok) fail(`Converter health check failed: GET ${converterUrl}/__convert/health returned ${res.status}. The main Worker will fail conversion jobs — check the dashboard and roll back if needed.`);
-    ok(`Converter health check passed: GET ${converterUrl}/__convert/health returned 200`);
-  } catch (e) {
-    fail(`Converter health check failed: could not reach ${converterUrl}/__convert/health (${e.message}).`);
-  }
+  await checkHealth(
+    `${url}/api/health`,
+    "Main",
+    `GET ${url}/api/health did not return 200 after ${HEALTH_ATTEMPTS} attempts (~90s). The deploy may be broken — check the dashboard and roll back if needed.`,
+  );
+  await checkHealth(
+    `${converterUrl}/__convert/health`,
+    "Converter",
+    `GET ${converterUrl}/__convert/health did not return 200 after ${HEALTH_ATTEMPTS} attempts (~90s). The main Worker will fail conversion jobs — check the dashboard and roll back if needed.`,
+  );
   for (const [label, url2, path] of [["social", socialUrl, "/__social/health"], ["woo", wooUrl, "/__woo/health"], ["school", schoolUrl, "/__school/health"], ["seo", seoUrl, "/__seo/health"]]) {
-    try {
-      const res = await fetch(`${url2}${path}`);
-      if (!res.ok) fail(`${label} health check failed: GET ${url2}${path} returned ${res.status}. The main Worker will fail ${label} routes — check the dashboard and roll back if needed.`);
-      ok(`${label} health check passed: GET ${url2}${path} returned 200`);
-    } catch (e) {
-      fail(`${label} health check failed: could not reach ${url2}${path} (${e.message}).`);
-    }
-  }
-  try {
-    const res = await fetch(`${converterUrl}/__convert/health`);
-    if (!res.ok) fail(`Converter health check failed: GET ${converterUrl}/__convert/health returned ${res.status}. The main Worker will fail conversion jobs — check the dashboard and roll back if needed.`);
-    ok(`Converter health check passed: GET ${converterUrl}/__convert/health returned 200`);
-  } catch (e) {
-    fail(`Converter health check failed: could not reach ${converterUrl}/__convert/health (${e.message}).`);
+    await checkHealth(
+      `${url2}${path}`,
+      label,
+      `GET ${url2}${path} did not return 200 after ${HEALTH_ATTEMPTS} attempts (~90s). The main Worker will fail ${label} routes — check the dashboard and roll back if needed.`,
+    );
   }
 
   log(`\n  Done. Next: the verification + soak checklist in docs/cutover-runbook.md (step ${env === "staging" ? "5" : "7"}).`);
