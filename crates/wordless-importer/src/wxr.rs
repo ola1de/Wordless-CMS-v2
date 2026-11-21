@@ -584,7 +584,7 @@ mod tests {
     use super::*;
 
     const FIXTURE: &str =
-        include_str!("../../../../wordless-cms/test/fixtures/wordpress/wordpress-export.xml");
+        include_str!("../test-fixtures/wordpress-export.xml");
 
     #[test]
     fn parses_the_fixture_export() {

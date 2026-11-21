@@ -495,7 +495,7 @@ mod tests {
     use super::*;
 
     const FIXTURE: &str =
-        include_str!("../../../../wordless-cms/test/fixtures/wordpress/wordpress-dump.sql");
+        include_str!("../test-fixtures/wordpress-dump.sql");
 
     #[test]
     fn parses_the_fixture_dump() {

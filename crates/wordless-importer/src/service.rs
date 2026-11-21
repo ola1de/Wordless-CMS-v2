@@ -1878,9 +1878,9 @@ mod tests {
     use wordless_db::Row;
 
     const WXR: &str =
-        include_str!("../../../../wordless-cms/test/fixtures/wordpress/wordpress-export.xml");
+        include_str!("../test-fixtures/wordpress-export.xml");
     const SQL: &str =
-        include_str!("../../../../wordless-cms/test/fixtures/wordpress/wordpress-dump.sql");
+        include_str!("../test-fixtures/wordpress-dump.sql");
 
     struct PngFetcher;
 
