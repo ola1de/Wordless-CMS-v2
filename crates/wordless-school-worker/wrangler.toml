@@ -54,6 +54,15 @@ binding = "DB"
 database_name = "wordless-staging"
 database_id = "66e2b750-693a-4310-b389-3d14ffd81e2a"
 
+# Staging has NO cron trigger (free tier): Cloudflare Workers Free
+# allows 5 cron triggers per account and this account already has 5
+# (mail-flare x2, mymail x2, proseforge x1 — verified 2026-11-21 via
+# the schedules API), so a 6th makes `wrangler deploy` fail after the
+# upload (staging run #3). The expired-attempt sweep still runs via
+# the lazy close on attempt read; run the sweep by hand on staging.
+[env.staging.triggers]
+crons = []
+
 [env.production]
 name = "wordless-school-production"
 

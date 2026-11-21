@@ -187,6 +187,14 @@ service = "wordless-school-staging"
 binding = "SEO"
 service = "wordless-seo-staging"
 
+# Staging has NO cron trigger (free tier): same 5-per-account limit
+# as the school Worker (see its wrangler.toml) — this account already
+# has 5, so the main Worker's `*/5 * * * *` schedule would fail the
+# staging deploy the same way school did (run #3). Scheduled-post
+# publishing does not run on staging; production keeps the cron.
+[env.staging.triggers]
+crons = []
+
 [env.production]
 name = "wordless-prod"
 

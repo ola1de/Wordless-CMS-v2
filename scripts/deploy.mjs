@@ -286,7 +286,14 @@ async function main() {
   for (const [label, dir] of [["social", "wordless-social-worker"], ["woo", "wordless-woocommerce-worker"], ["school", "wordless-school-worker"], ["seo", "wordless-seo-worker"]]) {
     log(`\n  4. Deploy ${label} (${env})`);
     r = run("npx", ["wrangler", "deploy", ...envArgs], { cwd: `${ROOT}/crates/${dir}` });
-    if (!r.ok) fail(`"wrangler deploy" (${label}) failed. Check the output above.`);
+    if (!r.ok) {
+      // The deploy runs with piped stdio, so wrangler's own error is
+      // captured, not printed — print it here or the failure is
+      // undiagnosable (staging run #3: school failed with no error).
+      if (r.stdout) console.error(r.stdout);
+      if (r.stderr) console.error(r.stderr);
+      fail(`"wrangler deploy" (${label}) failed. See the wrangler output above.`);
+    }
     const subUrlMatch = (r.stdout + r.stderr).match(/https:\/\/[A-Za-z0-9-]+\.[A-Za-z0-9-]+\.workers\.dev/);
     if (!subUrlMatch) {
       fail(`${label} deploy reported success but no workers.dev URL was found in the output. Run \`npx wrangler deploy\` in crates/${dir} and check the printed URL.`);
@@ -299,7 +306,11 @@ async function main() {
   }
   log(`\n  5. Deploy converter (${env})`);
   r = run("npx", ["wrangler", "deploy", ...envArgs], { cwd: `${ROOT}/crates/wordless-converter` });
-  if (!r.ok) fail("`wrangler deploy` (converter) failed. Check the output above.");
+  if (!r.ok) {
+    if (r.stdout) console.error(r.stdout);
+    if (r.stderr) console.error(r.stderr);
+    fail("`wrangler deploy` (converter) failed. See the wrangler output above.");
+  }
   const converterUrlMatch = (r.stdout + r.stderr).match(/https:\/\/[A-Za-z0-9-]+\.[A-Za-z0-9-]+\.workers\.dev/);
   const converterUrl = converterUrlMatch ? converterUrlMatch[0] : null;
   if (!converterUrl) {
@@ -309,7 +320,11 @@ async function main() {
 
   log(`\n  6. Deploy main (${env})`);
   r = run("npx", ["wrangler", "deploy", ...envArgs]);
-  if (!r.ok) fail("`wrangler deploy` (main) failed. Check the output above.");
+  if (!r.ok) {
+    if (r.stdout) console.error(r.stdout);
+    if (r.stderr) console.error(r.stderr);
+    fail("`wrangler deploy` (main) failed. See the wrangler output above.");
+  }
   const urlMatch = (r.stdout + r.stderr).match(/https:\/\/[A-Za-z0-9-]+\.[A-Za-z0-9-]+\.workers\.dev/);
   const url = urlMatch ? urlMatch[0] : null;
   if (!url) {
