@@ -57,9 +57,11 @@ id = "00000000-0000-0000-0000-000000000000"
 # secret, never in this file: `wrangler secret put
 # WORDLESS_EXT_HOST_SECRET` (or .dev.vars for local dev). Without it,
 # extension loading refuses and nothing dispatches (fail closed).
-[[dispatch_namespaces]]
-binding = "EXT_DISPATCHER"
-namespace = "wordless-extensions"
+# Dispatch namespace REMOVED 2026-11-21 for the free tier: it needs
+# Workers for Platforms ($25/mo, no free tier). Extensions use
+# service bindings (the free path, step 2 above) instead.
+# (Production [env.production] still declares it; that is a
+# separate, manual/guarded decision.)
 
 # Split (2026-11-20): the converter Worker — the PHP → TypeScript
 # engine + Elementor renderer as a separate Worker with its own 3 MiB
@@ -154,11 +156,9 @@ id = "1cafb05572a741e4978cfca34e639471"
 [env.staging.ai]
 binding = "AI"
 
-# P6: the extension dispatch namespace, per environment (same
-# namespace name; the binding must be declared per env like [ai]).
-[[env.staging.dispatch_namespaces]]
-binding = "EXT_DISPATCHER"
-namespace = "wordless-extensions"
+# P6: the extension dispatch namespace, REMOVED 2026-11-21 for
+# staging (free tier): it needs Workers for Platforms ($25/mo).
+# Extensions use service bindings (the free path) instead.
 
 # Split (2026-11-20): the converter Worker for this environment
 # (deployed by scripts/deploy.mjs before the main Worker).
