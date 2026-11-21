@@ -1,0 +1,45 @@
+# WORDLESS v2 — auto-deploy to STAGING only (never production)
+# Place at: .github/workflows/deploy-staging.yml in ola1de/Wordless-CMS-v2
+# Triggers on every push to main. Production stays manual:
+#   npm run deploy:production  (guarded, --confirm, user walkthrough)
+# Requires GitHub Secrets:
+#   CLOUDFLARE_API_TOKEN   — scoped API token (Workers Scripts Edit, D1 Edit,
+#                             R2 Edit, Workers KV Storage Edit, Queues Edit)
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare Account ID
+# Prerequisites before this can go green:
+#   1. Staging D1 + KV created in Cloudflare, IDs pasted into wrangler.toml
+#      [env.staging] (currently REPLACE-ME) and committed.
+#   2. Dispatch namespace wordless-extensions exists.
+#   3. Staging R2 bucket wordless-media-staging exists.
+# The deploy script itself runs cargo tests, all six Rust/WASM builds,
+# the size gate, remote D1 migrations, then deploys all six Workers
+# and verifies /api/health. It refuses without --env staging --confirm
+# and a real database_id, so a placeholder deploy cannot slip through.
+name: Deploy WORDLESS staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - run: npm ci
+      - name: Deploy staging (guarded script)
+        run: node scripts/deploy.mjs --env staging --confirm
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
