@@ -137,7 +137,7 @@ name = "wordless-staging"
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "wordless-staging"
-database_id = "REPLACE-ME"
+database_id = "66e2b750-693a-4310-b389-3d14ffd81e2a"
 migrations_dir = "migrations"
 
 [[env.staging.r2_buckets]]
@@ -146,7 +146,7 @@ bucket_name = "wordless-media-staging"
 
 [[env.staging.kv_namespaces]]
 binding = "CONFIG"
-id = "REPLACE-ME"
+id = "1cafb05572a741e4978cfca34e639471"
 
 # Workers AI is the default (and only required) AI provider — the
 # binding must be declared per environment: wrangler does NOT inherit
